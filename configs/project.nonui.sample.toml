@@ -1,0 +1,9 @@
+﻿project_name = "nonui-sample"
+project_type = "non_ui"
+workdir = "d:/DevEvo_Projects/Helloworld/cangjie-repair-template/examples/nonui_hello"
+adapter = "cjpm"
+verify_command = "run_verify.cmd"
+command_timeout_sec = 600
+editable_paths = ["src", "cjpm.toml", "run_verify.cmd"]
+readonly_paths = ["target", ".git", "build"]
+artifact_checks = []

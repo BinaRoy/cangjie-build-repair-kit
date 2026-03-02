@@ -1,0 +1,13 @@
+﻿[dependencies]
+
+[package]
+  cjc-version = "1.1.0"
+  compile-option = ""
+  description = "Non-UI sample for portable build-repair validation"
+  link-option = ""
+  name = "nonui_hello"
+  output-type = "static"
+  src-dir = "./src"
+  target-dir = ""
+  version = "1.0.0"
+  package-configuration = {}

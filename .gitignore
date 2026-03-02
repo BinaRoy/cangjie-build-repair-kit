@@ -1,0 +1,26 @@
+# Bytecode and caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local runtime artifacts
+runs/
+logs/
+tmp_init/
+
+# Packaging build output (transient)
+dist/
+
+# Python packaging metadata
+*.egg-info/
+
+# IDE/system
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Keep released package artifacts
+!release/
+!release/**

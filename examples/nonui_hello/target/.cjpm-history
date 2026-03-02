@@ -1,0 +1,35 @@
+{
+  "resolves": [
+    {
+      "rootPackageName": "nonui_hello",
+      "modulePath": ".",
+      "packagePath": {
+        "commonPaths": [],
+        "platformPaths": [
+          {
+            "_0": "package.src-dir",
+            "_1": "D:\\DevEvo_Projects\\Helloworld\\cangjie-repair-template\\examples\\nonui_hello\\src"
+          }
+        ]
+      },
+      "fullName": "nonui_hello",
+      "isMacroPackage": false,
+      "output-type": "static",
+      "compile-option": "",
+      "native-compile-option": "",
+      "customized-option": {},
+      "link-option": "",
+      "native-link-option": "",
+      "requires": [],
+      "std-requires": [],
+      "c_libs": {},
+      "cross_c_libs": {},
+      "hasTestFiles": false,
+      "hasProdFiles": true,
+      "hasTestsInProdFiles": false,
+      "accessLevel": "public"
+    }
+  ],
+  "binDeps": {},
+  "crossBinDeps": {}
+}

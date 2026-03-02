@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cangjie-repair-template"
+version = "0.1.0"
+description = "Portable Cangjie build-repair loop template"
+requires-python = ">=3.9"
+
+[project.scripts]
+cangjie-repair = "driver.main:main"
+
+[tool.setuptools]
+packages = ["driver", "adapters", "repair", "knowledge"]

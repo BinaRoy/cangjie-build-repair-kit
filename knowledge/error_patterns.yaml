@@ -1,0 +1,23 @@
+﻿- id: arkui_state_binding
+  keywords: ["@State", "Entry", "Component", "arkui"]
+  guidance: "Validate ArkUI decorators, state properties, and build() component composition order."
+
+- id: ability_register
+  keywords: ["UIAbility", "registerCreator", "EntryAbility"]
+  guidance: "Check ability registration name and imported class symbol consistency."
+
+- id: cjc_compile_error
+  keywords: ["compile", "syntax", "parse", "cjc"]
+  guidance: "Inspect the first compiler error line, then fix syntax before semantic issues."
+
+- id: link_error
+  keywords: ["undefined", "link", "symbol"]
+  guidance: "Verify output-type, linked packages, and architecture-specific library paths."
+
+- id: cjpm_bootstrap_missing_dll
+  keywords: ["0xc0000135", "3221225781", "cjpm_bootstrap_failed_missing_dll", "compilecangjie"]
+  guidance: "This is an environment bootstrap failure (missing DLL), not source code semantics. Fix PATH for Cangjie build-tools runtime/tool dirs before retrying."
+
+- id: preflight_toolchain_missing
+  keywords: ["build_tools_not_found", "cjpm_missing", "preflight_failed"]
+  guidance: "Toolchain is incomplete or not discoverable. Install Cangjie SDK or set DEVECO_CANGJIE_HOME correctly, then rerun verify."

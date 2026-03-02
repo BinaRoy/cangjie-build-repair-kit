@@ -1,0 +1,9 @@
+﻿project_name = "helloworld-ui"
+project_type = "ui"
+workdir = "d:/DevEvo_Projects/Helloworld"
+adapter = "hvigor"
+verify_command = "run_hvigor.cmd"
+command_timeout_sec = 1200
+editable_paths = ["entry/src/main/cangjie", "entry/cjpm.toml"]
+readonly_paths = ["AppScope", ".hvigor", "oh_modules"]
+artifact_checks = ["entry/build/default/outputs/default/entry-default-unsigned.hap"]

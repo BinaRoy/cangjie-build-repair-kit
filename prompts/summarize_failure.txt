@@ -1,0 +1,1 @@
+﻿Summarize why the repair loop stopped and provide next manual actions.

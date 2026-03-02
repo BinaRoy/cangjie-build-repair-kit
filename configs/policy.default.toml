@@ -1,0 +1,17 @@
+﻿max_iterations = 4
+max_files_changed_per_iter = 2
+max_total_files_changed = 6
+max_changed_lines_per_file = 120
+same_error_max_repeat = 2
+require_root_cause_extracted = true
+require_diff_summary = true
+stop_on_new_error_family = false
+allow_apply_patch = true
+require_verify_pass_after_patch = true
+require_preflight = true
+require_knowledge_lookup_on_failure = true
+min_knowledge_hits = 1
+require_knowledge_source_evidence = true
+require_non_scaffold_patch = true
+min_changed_lines_when_patch_applied = 1
+scaffold_markers = ["TODO", "FIXME", "NotImplemented", "stub", "placeholder"]
