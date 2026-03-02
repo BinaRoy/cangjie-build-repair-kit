@@ -8,12 +8,16 @@ __pycache__/
 runs/
 logs/
 tmp_init/
+examples/nonui_hello/target/
 
 # Packaging build output (transient)
 dist/
 
 # Python packaging metadata
 *.egg-info/
+
+# External mirrored knowledge repos (bootstrap on demand)
+knowledge/external/
 
 # IDE/system
 .idea/
