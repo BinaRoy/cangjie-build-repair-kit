@@ -105,7 +105,7 @@
 - [x] A3. `StateStore` 增加 `write_error`/`write_patch_plan`/`write_patch_diff`
 - [x] A4. `PatchApplier` 增加 dry-run 与最小 rollback（失败后自动恢复原文）
 - [x] A5. `run_loop` 按迭代输出 `error.json` 与 `patch_plan.json`
-- [ ] A6. 增加回归测试：fingerprint 稳定性、rollback 生效、产物文件存在
+- [x] A6. 增加回归测试：fingerprint 稳定性、rollback 生效、产物文件存在
 
 ### Milestone B（P1）模块边界重构
 
@@ -233,3 +233,10 @@
 - 验证命令: python3 -m unittest discover -s tests -q
 - 结果: PASS
 - 风险/待办: A6 未完成：尚缺 rollback 生效与产物存在的更完整回归集合
+
+### Update 2026-03-03
+- 变更: 新增 A6 回归测试集（fingerprint/rollback/artifacts），并修复 loop 早停分支 patch_plan 结构化落盘
+- 影响模块: tests/test_regression_a6.py, driver/loop.py
+- 验证命令: python3 -m unittest discover -s tests -q
+- 结果: PASS
+- 风险/待办: Milestone A 已完成，下一阶段进入 B1 接口抽象

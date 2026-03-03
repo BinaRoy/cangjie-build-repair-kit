@@ -76,10 +76,16 @@ def run_loop(
 
         error = extract_root_cause((verify.stderr or "") + "\n" + (verify.stdout or ""))
         store.write_error(i, to_dict(error))
+        empty_patch_plan = {
+            "can_apply": False,
+            "rationale": "No patch generated because loop stopped before planning.",
+            "diff_summary": "No patch generated.",
+            "actions": [],
+        }
         family_counts[error.family] = family_counts.get(error.family, 0) + 1
 
         if policy.stop_on_new_error_family and last_error_family and error.family != last_error_family:
-            store.write_patch_plan(i, {})
+            store.write_patch_plan(i, empty_patch_plan)
             decision = "stop_new_error_family_detected"
             record = IterationRecord(
                 iteration=i,
@@ -100,7 +106,7 @@ def run_loop(
         last_error_family = error.family
 
         if policy.require_root_cause_extracted and error.family == "unknown":
-            store.write_patch_plan(i, {})
+            store.write_patch_plan(i, empty_patch_plan)
             decision = "stop_root_cause_missing"
             record = IterationRecord(
                 iteration=i,
@@ -122,7 +128,7 @@ def run_loop(
         knowledge_hits = retrieve_knowledge(base_dir, error)
         if policy.require_knowledge_lookup_on_failure:
             if len(knowledge_hits) < policy.min_knowledge_hits:
-                store.write_patch_plan(i, {})
+                store.write_patch_plan(i, empty_patch_plan)
                 decision = "stop_no_knowledge_hits"
                 record = IterationRecord(
                     iteration=i,
@@ -141,7 +147,7 @@ def run_loop(
                 stop_reason = decision
                 break
             if policy.require_knowledge_source_evidence and not _knowledge_sources_valid(base_dir, knowledge_hits):
-                store.write_patch_plan(i, {})
+                store.write_patch_plan(i, empty_patch_plan)
                 decision = "stop_knowledge_source_not_verified"
                 record = IterationRecord(
                     iteration=i,
