@@ -5,7 +5,12 @@ from pathlib import Path
 from driver.contracts import PatchPlan, PatchResult, PolicyConfig, ProjectConfig
 
 
-def apply_patch_plan(plan: PatchPlan, project: ProjectConfig, policy: PolicyConfig) -> PatchResult:
+def apply_patch_plan(
+    plan: PatchPlan,
+    project: ProjectConfig,
+    policy: PolicyConfig,
+    dry_run: bool = False,
+) -> PatchResult:
     if not policy.allow_apply_patch:
         return PatchResult(
             applied=False,
@@ -23,36 +28,92 @@ def apply_patch_plan(plan: PatchPlan, project: ProjectConfig, policy: PolicyConf
 
     changed_files: list[str] = []
     changed_lines: dict[str, int] = {}
+    originals: dict[Path, str] = {}
     workdir = Path(project.workdir).resolve()
     editable_roots = [(workdir / p).resolve() for p in project.editable_paths]
 
     for act in plan.actions:
         if act.action != "replace_once":
-            return PatchResult(False, changed_files, changed_lines, f"Unsupported action: {act.action}")
+            return _rollback_and_fail(
+                workdir,
+                originals,
+                changed_files,
+                changed_lines,
+                f"Unsupported action: {act.action}",
+                dry_run=dry_run,
+            )
         if not act.search:
-            return PatchResult(False, changed_files, changed_lines, "Missing search text for replace_once.")
+            return _rollback_and_fail(
+                workdir,
+                originals,
+                changed_files,
+                changed_lines,
+                "Missing search text for replace_once.",
+                dry_run=dry_run,
+            )
 
         target = (workdir / act.file_path).resolve()
         if not target.exists():
-            return PatchResult(False, changed_files, changed_lines, f"Target file not found: {act.file_path}")
+            return _rollback_and_fail(
+                workdir,
+                originals,
+                changed_files,
+                changed_lines,
+                f"Target file not found: {act.file_path}",
+                dry_run=dry_run,
+            )
         if not _is_under_editable_roots(target, editable_roots):
-            return PatchResult(False, changed_files, changed_lines, f"Target outside editable_paths: {act.file_path}")
+            return _rollback_and_fail(
+                workdir,
+                originals,
+                changed_files,
+                changed_lines,
+                f"Target outside editable_paths: {act.file_path}",
+                dry_run=dry_run,
+            )
 
         old = target.read_text(encoding="utf-8", errors="replace")
         if act.search not in old:
-            return PatchResult(False, changed_files, changed_lines, f"Search text not found in {act.file_path}")
+            return _rollback_and_fail(
+                workdir,
+                originals,
+                changed_files,
+                changed_lines,
+                f"Search text not found in {act.file_path}",
+                dry_run=dry_run,
+            )
         new = old.replace(act.search, act.replace, 1)
         if new == old:
             continue
 
-        target.write_text(new, encoding="utf-8")
+        originals.setdefault(target, old)
+        if not dry_run:
+            target.write_text(new, encoding="utf-8")
         rel = target.relative_to(workdir).as_posix()
         changed_files.append(rel)
         changed_lines[rel] = _changed_line_count(old, new)
 
     if not changed_files:
         return PatchResult(False, [], {}, "No effective file changes were produced.")
+    if dry_run:
+        return PatchResult(True, changed_files, changed_lines, "Patch actions validated (dry-run, no files modified).")
     return PatchResult(True, changed_files, changed_lines, "Patch actions applied.")
+
+
+def _rollback_and_fail(
+    workdir: Path,
+    originals: dict[Path, str],
+    changed_files: list[str],
+    changed_lines: dict[str, int],
+    reason: str,
+    dry_run: bool,
+) -> PatchResult:
+    if changed_files:
+        if not dry_run:
+            for path, content in originals.items():
+                path.write_text(content, encoding="utf-8")
+        return PatchResult(False, [], {}, f"{reason}; rolled back {len(changed_files)} file(s).")
+    return PatchResult(False, changed_files, changed_lines, reason)
 
 
 def _is_under_editable_roots(path: Path, roots: list[Path]) -> bool:
