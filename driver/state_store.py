@@ -30,4 +30,18 @@ class StateStore:
         path = self.run_dir / "preflight.json"
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return path
-    
+
+    def write_error(self, iteration: int, payload: dict[str, Any]) -> Path:
+        path = self.run_dir / f"error_iter_{iteration}.json"
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return path
+
+    def write_patch_plan(self, iteration: int, payload: dict[str, Any]) -> Path:
+        path = self.run_dir / f"patch_plan_iter_{iteration}.json"
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return path
+
+    def write_patch_diff(self, iteration: int, diff_text: str) -> Path:
+        path = self.run_dir / f"patch_iter_{iteration}.diff"
+        path.write_text(diff_text, encoding="utf-8")
+        return path

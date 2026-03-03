@@ -102,7 +102,7 @@
 
 - [x] A1. 定义 `ErrorSchema`：`category/file/line/message/context/fingerprint`
 - [x] A2. 升级 `error_parser` 输出并保证 fingerprint 稳定
-- [ ] A3. `StateStore` 增加 `write_error`/`write_patch_plan`/`write_patch_diff`
+- [x] A3. `StateStore` 增加 `write_error`/`write_patch_plan`/`write_patch_diff`
 - [ ] A4. `PatchApplier` 增加 dry-run 与最小 rollback（失败后自动恢复原文）
 - [ ] A5. `run_loop` 按迭代输出 `error.json` 与 `patch_plan.json`
 - [ ] A6. 增加回归测试：fingerprint 稳定性、rollback 生效、产物文件存在
@@ -212,3 +212,10 @@
 - 验证命令: python3 -m unittest discover -s tests -q
 - 结果: PASS
 - 风险/待办: A3/A5 未完成：error.json 与 patch_plan.json 尚未落盘
+
+### Update 2026-03-03
+- 变更: StateStore 新增 error/patch_plan/patch_diff 持久化接口并补充回归测试
+- 影响模块: driver/state_store.py, tests/test_state_store.py
+- 验证命令: python3 -m unittest discover -s tests -q
+- 结果: PASS
+- 风险/待办: A5 未完成：loop 尚未调用新接口产出 error.json/patch_plan.json

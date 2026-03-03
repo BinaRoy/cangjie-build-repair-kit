@@ -1,24 +1,23 @@
 # Session Snapshot
 
-- generated_at: `2026-03-03T11:54:09Z`
+- generated_at: `2026-03-03T11:58:12Z`
 - source_guide: `/home/gloria/tianyue/cangjie-build-repair-kit/docs/development_assessment_and_followup.md`
 
 ## Git
 - branch: `main`
-- latest_commit: `dad30c2 feat: define ErrorSchema baseline for milestone A1`
+- latest_commit: `c9f6594 feat: upgrade error parser output with stable fingerprint`
 
 ### status --short
 ```text
 M docs/development_assessment_and_followup.md
- M driver/contracts.py
- M repair/error_parser.py
-?? tests/test_error_parser.py
+ M driver/state_store.py
+?? tests/test_state_store.py
 ```
 
 ## Milestone Checklist
 - [x] A1. 定义 `ErrorSchema`：`category/file/line/message/context/fingerprint`
 - [x] A2. 升级 `error_parser` 输出并保证 fingerprint 稳定
-- [ ] A3. `StateStore` 增加 `write_error`/`write_patch_plan`/`write_patch_diff`
+- [x] A3. `StateStore` 增加 `write_error`/`write_patch_plan`/`write_patch_diff`
 - [ ] A4. `PatchApplier` 增加 dry-run 与最小 rollback（失败后自动恢复原文）
 - [ ] A5. `run_loop` 按迭代输出 `error.json` 与 `patch_plan.json`
 - [ ] A6. 增加回归测试：fingerprint 稳定性、rollback 生效、产物文件存在
