@@ -186,7 +186,29 @@ def run_loop(
             "run_id": run_id,
             "project_name": project.project_name,
         }
+        before_strategy_files = _snapshot_editable_files(project)
         patch_plan = active_strategy.propose(error, strategy_context)
+        after_strategy_files = _snapshot_editable_files(project)
+        if before_strategy_files != after_strategy_files:
+            _restore_editable_files(before_strategy_files, after_strategy_files)
+            store.write_patch_plan(i, empty_patch_plan)
+            decision = "stop_strategy_direct_write_detected"
+            record = IterationRecord(
+                iteration=i,
+                verify_success=False,
+                exit_code=verify.exit_code,
+                error_family=error.family,
+                error_headline=error.headline,
+                knowledge_hits=[to_dict(x) for x in knowledge_hits],
+                patch_plan={},
+                patch_result={},
+                decision=decision,
+                post_patch_verify_success=None,
+                post_patch_verify_exit_code=None,
+            )
+            store.write_iteration(i, to_dict(record))
+            stop_reason = decision
+            break
         store.write_patch_plan(i, to_dict(patch_plan))
         patch_result = applier(patch_plan, project, policy)
 
@@ -263,3 +285,30 @@ def _knowledge_sources_valid(base_dir: Path, hits: list) -> bool:
         if not path.exists():
             return False
     return True
+
+
+def _snapshot_editable_files(project: ProjectConfig) -> dict[Path, str]:
+    workdir = Path(project.workdir).resolve()
+    snapshots: dict[Path, str] = {}
+    for rel_root in project.editable_paths:
+        root = (workdir / rel_root).resolve()
+        if not root.exists():
+            continue
+        if root.is_file():
+            snapshots[root] = root.read_text(encoding="utf-8", errors="replace")
+            continue
+        for path in root.rglob("*"):
+            if path.is_file():
+                snapshots[path.resolve()] = path.read_text(encoding="utf-8", errors="replace")
+    return snapshots
+
+
+def _restore_editable_files(before: dict[Path, str], after: dict[Path, str]) -> None:
+    # Remove files created during strategy execution.
+    for path in after:
+        if path not in before and path.exists():
+            path.unlink()
+    # Restore previous contents for modified/deleted files.
+    for path, content in before.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")

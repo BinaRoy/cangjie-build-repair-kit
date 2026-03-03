@@ -119,7 +119,7 @@
 
 - [x] C1. 定义 `LLMStrategy` 输入/输出 schema（仅协议）
 - [x] C2. 增加 mock strategy 适配层，验证不绕过 PatchApplier
-- [ ] C3. 明确安全红线测试：不得直接写文件/不得控制 loop
+- [x] C3. 明确安全红线测试：不得直接写文件/不得控制 loop
 
 ---
 
@@ -289,3 +289,10 @@
 - 验证命令: python3 -m unittest discover -s tests -q
 - 结果: PASS
 - 风险/待办: C3 未完成：安全红线测试仍待补齐
+
+### Update 2026-03-03
+- 变更: 新增 C3 安全红线测试并在 loop 增加策略直写文件检测与自动恢复
+- 影响模块: tests/test_safety_redlines.py, driver/loop.py
+- 验证命令: python3 -m unittest discover -s tests -q
+- 结果: PASS
+- 风险/待办: Milestone C 已完成；后续可进入分支收尾与整体验收

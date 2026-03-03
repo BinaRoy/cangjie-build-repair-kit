@@ -1,18 +1,17 @@
 # Session Snapshot
 
-- generated_at: `2026-03-03T14:22:53Z`
+- generated_at: `2026-03-03T14:34:49Z`
 - source_guide: `/home/gloria/tianyue/cangjie-build-repair-kit/docs/development_assessment_and_followup.md`
 
 ## Git
 - branch: `main`
-- latest_commit: `26fb527 feat: define llm strategy input output schemas`
+- latest_commit: `0bc7d1e feat: add mock llm strategy adapter for C2`
 
 ### status --short
 ```text
 M docs/development_assessment_and_followup.md
- M repair/strategies/__init__.py
-?? repair/strategies/mock_llm.py
-?? tests/test_mock_llm_strategy.py
+ M driver/loop.py
+?? tests/test_safety_redlines.py
 ```
 
 ## Milestone Checklist
@@ -29,7 +28,7 @@ M docs/development_assessment_and_followup.md
 - [x] B5. 增加接口契约测试，防止模块直接耦合回退
 - [x] C1. 定义 `LLMStrategy` 输入/输出 schema（仅协议）
 - [x] C2. 增加 mock strategy 适配层，验证不绕过 PatchApplier
-- [ ] C3. 明确安全红线测试：不得直接写文件/不得控制 loop
+- [x] C3. 明确安全红线测试：不得直接写文件/不得控制 loop
 
 ## Next Session Start
 1. Read this file and `docs/development_assessment_and_followup.md`.
