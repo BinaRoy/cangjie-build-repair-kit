@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+import sys
 
 from driver.main import _extract_required_commands, _validate_command
 
@@ -27,7 +28,7 @@ class ValidateCommandTests(unittest.TestCase):
                         'project_type = "non_ui"',
                         f'workdir = "{workdir.as_posix()}"',
                         'adapter = "cjpm"',
-                        'verify_command = "python --version"',
+                        f'verify_command = "{sys.executable} --version"',
                         "command_timeout_sec = 60",
                         'editable_paths = ["src"]',
                         'readonly_paths = ["readonly"]',
@@ -84,7 +85,7 @@ class ValidateCommandTests(unittest.TestCase):
                         'project_type = "non_ui"',
                         f'workdir = "{workdir.as_posix()}"',
                         'adapter = "cjpm"',
-                        'verify_command = "python --version"',
+                        f'verify_command = "{sys.executable} --version"',
                         'test_command = "definitely_missing_test_cmd_123456 --help"',
                         "command_timeout_sec = 60",
                         'editable_paths = ["src"]',

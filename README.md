@@ -54,6 +54,16 @@ Export product bundle (filtered):
 cangjie-repair export --output-dir .\dist\product_bundle --force
 ```
 
+Generate session handoff snapshot:
+```powershell
+cangjie-repair snapshot --output .\docs\session_snapshot.md --source-doc .\docs\development_assessment_and_followup.md
+```
+
+Append one development update entry:
+```powershell
+cangjie-repair doc-update --date 2026-03-03 --change "..." --modules "driver/main.py,tests/test_x.py" --verify-command "python3 -m unittest discover -s tests -q" --result "PASS" --risk "..."
+```
+
 Outputs:
 - Iteration logs: `runs/<run_id>/iter_*.json`
 - Raw verify logs: `runs/<run_id>/verify_iter_*.log`

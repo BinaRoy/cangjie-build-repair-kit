@@ -13,10 +13,12 @@ from typing import Sequence
 from adapters.cjpm_adapter import CjpmAdapter
 from adapters.hvigor_adapter import HvigorAdapter
 from driver.contracts import PolicyConfig, ProjectConfig
+from driver.doc_maintenance import append_update_entry
 from driver.env_setup import build_env_with_toolchain
 from driver.loop import run_loop
 from driver.packaging import export_product_bundle
 from driver.reporting import generate_run_report
+from driver.session_snapshot import write_snapshot_file
 
 
 def _load_toml(path: Path) -> dict:
@@ -314,6 +316,38 @@ def _init_command(template: str, output_dir: str, project_name: str, workdir: st
     return 0
 
 
+def _snapshot_command(output: str, source_doc: str) -> int:
+    base_dir = Path(__file__).resolve().parents[1]
+    out = Path(output).resolve()
+    source = Path(source_doc).resolve()
+    path = write_snapshot_file(base_dir=base_dir, source_doc=source, output_path=out)
+    print(f"session snapshot generated: {path.as_posix()}")
+    return 0
+
+
+def _doc_update_command(
+    doc_path: str,
+    date_text: str,
+    change: str,
+    modules: str,
+    verify_command: str,
+    result: str,
+    risk: str,
+) -> int:
+    mods = [x.strip() for x in modules.split(",") if x.strip()]
+    out = append_update_entry(
+        doc_path=Path(doc_path).resolve(),
+        date_text=date_text,
+        change=change,
+        modules=mods,
+        verify_command=verify_command,
+        result=result,
+        risk=risk,
+    )
+    print(f"development update appended: {out.as_posix()}")
+    return 0
+
+
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Cangjie build-repair tool")
     sub = parser.add_subparsers(dest="command")
@@ -333,6 +367,19 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     export = sub.add_parser("export", help="export product bundle with filtered content")
     export.add_argument("--output-dir", required=True)
     export.add_argument("--force", action="store_true")
+
+    snapshot = sub.add_parser("snapshot", help="generate session snapshot for next context handoff")
+    snapshot.add_argument("--output", default="docs/session_snapshot.md")
+    snapshot.add_argument("--source-doc", default="docs/development_assessment_and_followup.md")
+
+    doc_update = sub.add_parser("doc-update", help="append one update entry to development followup doc")
+    doc_update.add_argument("--doc-path", default="docs/development_assessment_and_followup.md")
+    doc_update.add_argument("--date", required=True)
+    doc_update.add_argument("--change", required=True)
+    doc_update.add_argument("--modules", default="")
+    doc_update.add_argument("--verify-command", required=True)
+    doc_update.add_argument("--result", required=True)
+    doc_update.add_argument("--risk", default="")
 
     validate = sub.add_parser("validate", help="validate config schema and command/path availability")
     validate.add_argument("--project-config", required=True)
@@ -355,6 +402,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         out = export_product_bundle(base_dir=base_dir, output_dir=Path(args.output_dir), force=args.force)
         print(f"exported product bundle: {out.as_posix()}")
         return 0
+    if args.command == "snapshot":
+        return _snapshot_command(args.output, args.source_doc)
+    if args.command == "doc-update":
+        return _doc_update_command(
+            doc_path=args.doc_path,
+            date_text=args.date,
+            change=args.change,
+            modules=args.modules,
+            verify_command=args.verify_command,
+            result=args.result,
+            risk=args.risk,
+        )
     if args.command == "validate":
         return _validate_command(args.project_config, args.policy_config)
     if args.command == "run":
@@ -364,7 +423,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.project_config and args.policy_config:
         return _run_command(args.project_config, args.policy_config, args.run_id)
     raise SystemExit(
-        "Use `run`, `validate`, `init` or `export` subcommand. "
+        "Use `run`, `validate`, `init`, `export`, `snapshot` or `doc-update` subcommand. "
         "Example: cangjie-repair run --project-config ..."
     )
 
