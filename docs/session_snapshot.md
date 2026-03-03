@@ -1,18 +1,18 @@
 # Session Snapshot
 
-- generated_at: `2026-03-03T14:06:51Z`
+- generated_at: `2026-03-03T14:22:53Z`
 - source_guide: `/home/gloria/tianyue/cangjie-build-repair-kit/docs/development_assessment_and_followup.md`
 
 ## Git
 - branch: `main`
-- latest_commit: `cfb7e33 test: add loop interface contract coverage for B5`
+- latest_commit: `26fb527 feat: define llm strategy input output schemas`
 
 ### status --short
 ```text
 M docs/development_assessment_and_followup.md
  M repair/strategies/__init__.py
-?? repair/strategies/llm.py
-?? tests/test_llm_strategy_schema.py
+?? repair/strategies/mock_llm.py
+?? tests/test_mock_llm_strategy.py
 ```
 
 ## Milestone Checklist
@@ -28,7 +28,7 @@ M docs/development_assessment_and_followup.md
 - [x] B4. `loop` 改为依赖注入：parser/strategy/applier/verifier
 - [x] B5. 增加接口契约测试，防止模块直接耦合回退
 - [x] C1. 定义 `LLMStrategy` 输入/输出 schema（仅协议）
-- [ ] C2. 增加 mock strategy 适配层，验证不绕过 PatchApplier
+- [x] C2. 增加 mock strategy 适配层，验证不绕过 PatchApplier
 - [ ] C3. 明确安全红线测试：不得直接写文件/不得控制 loop
 
 ## Next Session Start
