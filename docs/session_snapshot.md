@@ -1,17 +1,18 @@
 # Session Snapshot
 
-- generated_at: `2026-03-03T14:03:02Z`
+- generated_at: `2026-03-03T14:06:51Z`
 - source_guide: `/home/gloria/tianyue/cangjie-build-repair-kit/docs/development_assessment_and_followup.md`
 
 ## Git
 - branch: `main`
-- latest_commit: `d91094e refactor: inject loop dependencies for parser strategy applier verifier`
+- latest_commit: `cfb7e33 test: add loop interface contract coverage for B5`
 
 ### status --short
 ```text
 M docs/development_assessment_and_followup.md
- M driver/loop.py
-?? tests/test_loop_contracts.py
+ M repair/strategies/__init__.py
+?? repair/strategies/llm.py
+?? tests/test_llm_strategy_schema.py
 ```
 
 ## Milestone Checklist
@@ -26,7 +27,7 @@ M docs/development_assessment_and_followup.md
 - [x] B3. 新增 `driver/verifier.py`，统一 build/test/artifact 判定
 - [x] B4. `loop` 改为依赖注入：parser/strategy/applier/verifier
 - [x] B5. 增加接口契约测试，防止模块直接耦合回退
-- [ ] C1. 定义 `LLMStrategy` 输入/输出 schema（仅协议）
+- [x] C1. 定义 `LLMStrategy` 输入/输出 schema（仅协议）
 - [ ] C2. 增加 mock strategy 适配层，验证不绕过 PatchApplier
 - [ ] C3. 明确安全红线测试：不得直接写文件/不得控制 loop
 

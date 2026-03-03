@@ -117,7 +117,7 @@
 
 ### Milestone C（P2）LLM 接入前置设计（不接入真实 LLM）
 
-- [ ] C1. 定义 `LLMStrategy` 输入/输出 schema（仅协议）
+- [x] C1. 定义 `LLMStrategy` 输入/输出 schema（仅协议）
 - [ ] C2. 增加 mock strategy 适配层，验证不绕过 PatchApplier
 - [ ] C3. 明确安全红线测试：不得直接写文件/不得控制 loop
 
@@ -275,3 +275,10 @@
 - 验证命令: python3 -m unittest discover -s tests -q
 - 结果: PASS
 - 风险/待办: Milestone B 已完成，下一阶段进入 C1 协议定义
+
+### Update 2026-03-03
+- 变更: 新增 LLMStrategy 输入/输出 schema 协议与适配基类，不接真实 LLM（C1）
+- 影响模块: repair/strategies/llm.py, repair/strategies/__init__.py, tests/test_llm_strategy_schema.py
+- 验证命令: python3 -m unittest discover -s tests -q
+- 结果: PASS
+- 风险/待办: C2 未完成：尚缺 mock strategy 适配层与 PatchApplier 链路验证
