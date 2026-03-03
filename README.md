@@ -21,7 +21,7 @@ This is a minimal, configurable build -> diagnose -> repair-plan -> rebuild work
 
 ## Quick start
 ```powershell
-cd d:\DevEvo_Projects\Helloworld\cangjie-repair-template
+cd <this-repo>
 python -m pip install -e .
 cangjie-repair run --project-config configs/project.helloworld.toml --policy-config configs/policy.default.toml
 ```
@@ -33,7 +33,8 @@ cangjie-repair run --project-config configs/project.nonui.sample.toml --policy-c
 
 Generate reusable config templates:
 ```powershell
-cangjie-repair init --template ui --output-dir .\my-configs --project-name my-ui --workdir d:\path\to\project
+cangjie-repair init --template ui --output-dir .\my-configs --project-name my-ui --workdir .
+cangjie-repair init --template non_ui --output-dir .\my-configs --project-name my-lib --workdir .
 ```
 
 Export product bundle (filtered):
@@ -58,3 +59,16 @@ Outputs:
 ## Knowledge routing
 - Toolchain repo routing: `knowledge/cangjie/toolchain/cangjie_tools_lookup_rules.md`
 - Core repos routing (`compiler/runtime/docs`): `knowledge/cangjie/toolchain/cangjie_core_lookup_rules.md`
+
+## Reuse on any project (no LLM)
+1. Install: `python -m pip install -e .`
+2. Generate config: `cangjie-repair init --template <ui|non_ui> --output-dir <dir> --project-name <name> --workdir <target-project-root>`
+3. Edit generated `project.<name>.toml`:
+   - set `verify_command` to your project build command
+   - set `editable_paths` to directories allowed to change
+4. Run: `cangjie-repair run --project-config <project.toml> --policy-config <policy.toml>`
+
+Notes:
+- Config supports `${ENV_VAR}` placeholders.
+- Relative `workdir` is resolved against the config file location.
+- On Windows, adapters auto-inject Cangjie toolchain runtime paths when available.

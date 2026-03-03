@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import os
+import re
 import uuid
 from pathlib import Path
 from typing import Sequence
@@ -55,6 +57,29 @@ def _parse_toml_value(val: str):
         return val
 
 
+def _expand_env_vars(value):
+    if isinstance(value, str):
+        # Supports ${VAR} style placeholders.
+        def repl(match):
+            key = match.group(1)
+            return os.environ.get(key, match.group(0))
+
+        return re.sub(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}", repl, value)
+    if isinstance(value, list):
+        return [_expand_env_vars(x) for x in value]
+    return value
+
+
+def _normalize_project_config(project_data: dict, project_config_path: Path) -> dict:
+    out = {k: _expand_env_vars(v) for k, v in project_data.items()}
+    wd = str(out.get("workdir", ".")).strip() or "."
+    wd_path = Path(wd)
+    if not wd_path.is_absolute():
+        wd_path = (project_config_path.parent / wd_path).resolve()
+    out["workdir"] = wd_path.as_posix()
+    return out
+
+
 def _pick_adapter(name: str):
     if name == "hvigor":
         return HvigorAdapter()
@@ -69,7 +94,8 @@ def _default_run_id() -> str:
 
 def _run_command(project_config: str, policy_config: str, run_id: str = "") -> int:
     base_dir = Path(__file__).resolve().parents[1]
-    project_data = _load_toml(Path(project_config))
+    project_cfg_path = Path(project_config).resolve()
+    project_data = _normalize_project_config(_load_toml(project_cfg_path), project_cfg_path)
     policy_data = _load_toml(Path(policy_config))
 
     project = ProjectConfig(**project_data)
@@ -109,7 +135,7 @@ def _init_command(template: str, output_dir: str, project_name: str, workdir: st
             'project_type = "ui"\n'
             f'workdir = "{wd}"\n'
             'adapter = "hvigor"\n'
-            'verify_command = "run_hvigor.cmd"\n'
+            'verify_command = "hvigorw.bat --mode module -p module=entry -p product=default clean assembleHap --no-daemon"\n'
             "command_timeout_sec = 1200\n"
             'editable_paths = ["entry/src/main/cangjie", "entry/cjpm.toml"]\n'
             'readonly_paths = ["AppScope", ".hvigor", "oh_modules"]\n'
@@ -121,9 +147,9 @@ def _init_command(template: str, output_dir: str, project_name: str, workdir: st
             'project_type = "non_ui"\n'
             f'workdir = "{wd}"\n'
             'adapter = "cjpm"\n'
-            'verify_command = "run_verify.cmd"\n'
+            'verify_command = "cjpm build"\n'
             "command_timeout_sec = 600\n"
-            'editable_paths = ["src", "cjpm.toml", "run_verify.cmd"]\n'
+            'editable_paths = ["src", "cjpm.toml"]\n'
             'readonly_paths = ["target", ".git", "build"]\n'
             "artifact_checks = []\n"
         )
@@ -186,7 +212,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(argv)
     base_dir = Path(__file__).resolve().parents[1]
     if args.command == "init":
-        workdir = args.workdir or "d:/path/to/project"
+        workdir = args.workdir or "."
         return _init_command(args.template, args.output_dir, args.project_name, workdir, args.force)
     if args.command == "export":
         out = export_product_bundle(base_dir=base_dir, output_dir=Path(args.output_dir), force=args.force)

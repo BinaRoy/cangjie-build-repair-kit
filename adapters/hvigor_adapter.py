@@ -6,6 +6,7 @@ from pathlib import Path
 
 from adapters.base import BuildAdapter
 from driver.contracts import ProjectConfig, VerifyResult
+from driver.env_setup import build_env_with_toolchain
 
 
 class HvigorAdapter(BuildAdapter):
@@ -20,6 +21,7 @@ class HvigorAdapter(BuildAdapter):
             timeout=project.command_timeout_sec,
             encoding="utf-8",
             errors="replace",
+            env=build_env_with_toolchain(),
         )
         checks = {}
         for rel in project.artifact_checks:

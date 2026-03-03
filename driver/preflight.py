@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 
 from driver.contracts import PreflightResult, ProjectConfig
+from driver.env_setup import build_env_with_toolchain, collect_runtime_paths, detect_build_tools
 
 
 def run_preflight(project: ProjectConfig) -> PreflightResult:
@@ -13,7 +14,7 @@ def run_preflight(project: ProjectConfig) -> PreflightResult:
     if project.adapter not in ("hvigor", "cjpm"):
         return PreflightResult(passed=True, reason="preflight_skipped_adapter")
 
-    build_tools = _detect_build_tools()
+    build_tools = detect_build_tools()
     if not build_tools:
         return PreflightResult(
             passed=False,
@@ -27,7 +28,7 @@ def run_preflight(project: ProjectConfig) -> PreflightResult:
             },
         )
 
-    path_parts = _collect_runtime_paths(build_tools)
+    path_parts = collect_runtime_paths(build_tools)
     cjpm = build_tools / "tools" / "bin" / "cjpm.exe"
     if not cjpm.exists():
         return PreflightResult(
@@ -42,8 +43,7 @@ def run_preflight(project: ProjectConfig) -> PreflightResult:
             },
         )
 
-    env = os.environ.copy()
-    env["PATH"] = ";".join(path_parts + [env.get("PATH", "")])
+    env = build_env_with_toolchain()
 
     proc = subprocess.run(
         [str(cjpm), "--help"],
@@ -86,33 +86,6 @@ def run_preflight(project: ProjectConfig) -> PreflightResult:
             "added_path": path_parts,
         },
     )
-
-
-def _detect_build_tools() -> Path | None:
-    cangjie_home = os.environ.get("DEVECO_CANGJIE_HOME", "").strip()
-    if cangjie_home:
-        p = Path(cangjie_home).resolve()
-        candidate = p / "build-tools" if p.name != "build-tools" else p
-        if candidate.exists():
-            return candidate
-
-    sdk_root = Path.home() / ".cangjie-sdk"
-    if not sdk_root.exists():
-        return None
-    candidates = sorted(sdk_root.glob("*/cangjie/build-tools"))
-    return candidates[-1] if candidates else None
-
-
-def _collect_runtime_paths(build_tools: Path) -> list[str]:
-    dirs = [
-        build_tools / "bin",
-        build_tools / "lib",
-        build_tools / "tools" / "bin",
-        build_tools / "tools" / "lib",
-        build_tools / "third_party" / "llvm" / "bin",
-        build_tools / "runtime" / "lib" / "windows_x86_64_cjnative",
-    ]
-    return [str(p) for p in dirs if p.exists()]
 
 
 def _remediation_for_bootstrap_failure(build_tools: Path, exit_code: int) -> list[str]:
