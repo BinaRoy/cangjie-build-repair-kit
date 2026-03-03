@@ -1,17 +1,19 @@
 # Session Snapshot
 
-- generated_at: `2026-03-03T13:24:31Z`
+- generated_at: `2026-03-03T13:27:59Z`
 - source_guide: `/home/gloria/tianyue/cangjie-build-repair-kit/docs/development_assessment_and_followup.md`
 
 ## Git
 - branch: `main`
-- latest_commit: `f5c6d06 test: add milestone A6 regression coverage`
+- latest_commit: `9659a99 feat: add repair strategy base interface for B1`
 
 ### status --short
 ```text
 M docs/development_assessment_and_followup.md
-?? repair/strategies/
-?? tests/test_strategy_base.py
+ M repair/planner.py
+ M repair/strategies/__init__.py
+?? repair/strategies/rule_based.py
+?? tests/test_rule_based_strategy.py
 ```
 
 ## Milestone Checklist
@@ -22,7 +24,7 @@ M docs/development_assessment_and_followup.md
 - [x] A5. `run_loop` 按迭代输出 `error.json` 与 `patch_plan.json`
 - [x] A6. 增加回归测试：fingerprint 稳定性、rollback 生效、产物文件存在
 - [x] B1. 新增 `repair/strategies/base.py`（`propose(error, context)->PatchPlan`）
-- [ ] B2. 将当前规则策略迁移到 `repair/strategies/rule_based.py`
+- [x] B2. 将当前规则策略迁移到 `repair/strategies/rule_based.py`
 - [ ] B3. 新增 `driver/verifier.py`，统一 build/test/artifact 判定
 - [ ] B4. `loop` 改为依赖注入：parser/strategy/applier/verifier
 - [ ] B5. 增加接口契约测试，防止模块直接耦合回退

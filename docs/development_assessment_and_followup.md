@@ -110,7 +110,7 @@
 ### Milestone B（P1）模块边界重构
 
 - [x] B1. 新增 `repair/strategies/base.py`（`propose(error, context)->PatchPlan`）
-- [ ] B2. 将当前规则策略迁移到 `repair/strategies/rule_based.py`
+- [x] B2. 将当前规则策略迁移到 `repair/strategies/rule_based.py`
 - [ ] B3. 新增 `driver/verifier.py`，统一 build/test/artifact 判定
 - [ ] B4. `loop` 改为依赖注入：parser/strategy/applier/verifier
 - [ ] B5. 增加接口契约测试，防止模块直接耦合回退
@@ -247,3 +247,10 @@
 - 验证命令: python3 -m unittest discover -s tests -q
 - 结果: PASS
 - 风险/待办: B2 未完成：规则策略尚未迁移到 repair/strategies/rule_based.py
+
+### Update 2026-03-03
+- 变更: 将规则策略迁移至 repair/strategies/rule_based.py，planner 改为委托策略实现
+- 影响模块: repair/strategies/rule_based.py, repair/strategies/__init__.py, repair/planner.py, tests/test_rule_based_strategy.py
+- 验证命令: python3 -m unittest discover -s tests -q
+- 结果: PASS
+- 风险/待办: B3/B4 未完成：verifier 抽象与 loop 依赖注入仍待推进
