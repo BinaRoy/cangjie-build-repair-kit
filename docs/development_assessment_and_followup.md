@@ -113,7 +113,7 @@
 - [x] B2. 将当前规则策略迁移到 `repair/strategies/rule_based.py`
 - [x] B3. 新增 `driver/verifier.py`，统一 build/test/artifact 判定
 - [x] B4. `loop` 改为依赖注入：parser/strategy/applier/verifier
-- [ ] B5. 增加接口契约测试，防止模块直接耦合回退
+- [x] B5. 增加接口契约测试，防止模块直接耦合回退
 
 ### Milestone C（P2）LLM 接入前置设计（不接入真实 LLM）
 
@@ -268,3 +268,10 @@
 - 验证命令: python3 -m unittest discover -s tests -q
 - 结果: PASS
 - 风险/待办: B5 未完成：接口契约测试仍需系统化覆盖
+
+### Update 2026-03-03
+- 变更: 新增 loop 接口契约测试并固定 strategy context 字段，防止依赖注入回退
+- 影响模块: tests/test_loop_contracts.py, driver/loop.py
+- 验证命令: python3 -m unittest discover -s tests -q
+- 结果: PASS
+- 风险/待办: Milestone B 已完成，下一阶段进入 C1 协议定义

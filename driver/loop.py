@@ -180,7 +180,13 @@ def run_loop(
                 stop_reason = decision
                 break
 
-        patch_plan = active_strategy.propose(error, {"knowledge_hits": knowledge_hits})
+        strategy_context = {
+            "knowledge_hits": knowledge_hits,
+            "iteration": i,
+            "run_id": run_id,
+            "project_name": project.project_name,
+        }
+        patch_plan = active_strategy.propose(error, strategy_context)
         store.write_patch_plan(i, to_dict(patch_plan))
         patch_result = applier(patch_plan, project, policy)
 
