@@ -7,6 +7,7 @@ from pathlib import Path
 from adapters.base import BuildAdapter
 from driver.contracts import ProjectConfig, VerifyResult
 from driver.env_setup import build_env_with_toolchain
+from driver.verifier import evaluate_verify_result
 
 
 class CjpmAdapter(BuildAdapter):
@@ -25,12 +26,10 @@ class CjpmAdapter(BuildAdapter):
             errors="replace",
             env=env,
         )
-        output = [f"[build] $ {project.verify_command}", build_proc.stdout, build_proc.stderr]
-        final_code = build_proc.returncode
-        final_success = build_proc.returncode == 0
-        command = project.verify_command
-
-        if final_success and project.test_command.strip():
+        test_returncode = None
+        test_stdout = ""
+        test_stderr = ""
+        if build_proc.returncode == 0 and project.test_command.strip():
             test_proc = subprocess.run(
                 project.test_command,
                 cwd=Path(project.workdir),
@@ -42,17 +41,21 @@ class CjpmAdapter(BuildAdapter):
                 errors="replace",
                 env=env,
             )
-            output.extend([f"[test] $ {project.test_command}", test_proc.stdout, test_proc.stderr])
-            final_code = test_proc.returncode
-            final_success = test_proc.returncode == 0
-            command = f"{project.verify_command} && {project.test_command}"
+            test_returncode = test_proc.returncode
+            test_stdout = test_proc.stdout
+            test_stderr = test_proc.stderr
 
-        return VerifyResult(
-            success=final_success,
-            exit_code=final_code,
-            duration_sec=round(time.time() - start, 3),
-            command=command,
-            stdout="\n".join([x for x in output if x and x.strip()]),
-            stderr="",
-            artifact_checks={},
+        result = evaluate_verify_result(
+            workdir=Path(project.workdir),
+            build_returncode=build_proc.returncode,
+            build_stdout=build_proc.stdout,
+            build_stderr=build_proc.stderr,
+            build_command=project.verify_command,
+            test_returncode=test_returncode,
+            test_stdout=test_stdout,
+            test_stderr=test_stderr,
+            test_command=project.test_command,
+            artifact_checks=[],
         )
+        result.duration_sec = round(time.time() - start, 3)
+        return result

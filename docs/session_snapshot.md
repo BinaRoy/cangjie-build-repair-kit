@@ -1,19 +1,19 @@
 # Session Snapshot
 
-- generated_at: `2026-03-03T13:27:59Z`
+- generated_at: `2026-03-03T13:38:42Z`
 - source_guide: `/home/gloria/tianyue/cangjie-build-repair-kit/docs/development_assessment_and_followup.md`
 
 ## Git
 - branch: `main`
-- latest_commit: `9659a99 feat: add repair strategy base interface for B1`
+- latest_commit: `33128c3 refactor: migrate planner rules to rule-based strategy`
 
 ### status --short
 ```text
-M docs/development_assessment_and_followup.md
- M repair/planner.py
- M repair/strategies/__init__.py
-?? repair/strategies/rule_based.py
-?? tests/test_rule_based_strategy.py
+M adapters/cjpm_adapter.py
+ M adapters/hvigor_adapter.py
+ M docs/development_assessment_and_followup.md
+?? driver/verifier.py
+?? tests/test_verifier.py
 ```
 
 ## Milestone Checklist
@@ -25,7 +25,7 @@ M docs/development_assessment_and_followup.md
 - [x] A6. 增加回归测试：fingerprint 稳定性、rollback 生效、产物文件存在
 - [x] B1. 新增 `repair/strategies/base.py`（`propose(error, context)->PatchPlan`）
 - [x] B2. 将当前规则策略迁移到 `repair/strategies/rule_based.py`
-- [ ] B3. 新增 `driver/verifier.py`，统一 build/test/artifact 判定
+- [x] B3. 新增 `driver/verifier.py`，统一 build/test/artifact 判定
 - [ ] B4. `loop` 改为依赖注入：parser/strategy/applier/verifier
 - [ ] B5. 增加接口契约测试，防止模块直接耦合回退
 - [ ] C1. 定义 `LLMStrategy` 输入/输出 schema（仅协议）
