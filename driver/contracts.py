@@ -69,6 +69,18 @@ class ErrorSchema:
     context: str
     fingerprint: str
 
+    @property
+    def family(self) -> str:
+        return self.category
+
+    @property
+    def headline(self) -> str:
+        return self.message
+
+    @property
+    def excerpt(self) -> str:
+        return self.context
+
 
 @dataclass
 class KnowledgeItem:

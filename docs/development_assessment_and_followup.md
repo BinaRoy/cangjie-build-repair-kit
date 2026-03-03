@@ -101,7 +101,7 @@
 ### Milestone A（P0）审计与可回滚闭环
 
 - [x] A1. 定义 `ErrorSchema`：`category/file/line/message/context/fingerprint`
-- [ ] A2. 升级 `error_parser` 输出并保证 fingerprint 稳定
+- [x] A2. 升级 `error_parser` 输出并保证 fingerprint 稳定
 - [ ] A3. `StateStore` 增加 `write_error`/`write_patch_plan`/`write_patch_diff`
 - [ ] A4. `PatchApplier` 增加 dry-run 与最小 rollback（失败后自动恢复原文）
 - [ ] A5. `run_loop` 按迭代输出 `error.json` 与 `patch_plan.json`
@@ -205,3 +205,10 @@
 - 验证命令: python3 -m unittest discover -s tests -q
 - 结果: PASS
 - 风险/待办: A2 尚未开始：error_parser 尚未输出 file/line/fingerprint
+
+### Update 2026-03-03
+- 变更: 升级 error_parser 输出为 ErrorSchema，并实现稳定 fingerprint 归一化
+- 影响模块: repair/error_parser.py, driver/contracts.py, tests/test_error_parser.py
+- 验证命令: python3 -m unittest discover -s tests -q
+- 结果: PASS
+- 风险/待办: A3/A5 未完成：error.json 与 patch_plan.json 尚未落盘

@@ -1,23 +1,23 @@
 # Session Snapshot
 
-- generated_at: `2026-03-03T11:48:22Z`
+- generated_at: `2026-03-03T11:54:09Z`
 - source_guide: `/home/gloria/tianyue/cangjie-build-repair-kit/docs/development_assessment_and_followup.md`
 
 ## Git
 - branch: `main`
-- latest_commit: `3deb0c6 feat: add session handoff and followup maintenance tooling`
+- latest_commit: `dad30c2 feat: define ErrorSchema baseline for milestone A1`
 
 ### status --short
 ```text
 M docs/development_assessment_and_followup.md
- M docs/session_snapshot.md
  M driver/contracts.py
-?? tests/test_error_schema.py
+ M repair/error_parser.py
+?? tests/test_error_parser.py
 ```
 
 ## Milestone Checklist
 - [x] A1. 定义 `ErrorSchema`：`category/file/line/message/context/fingerprint`
-- [ ] A2. 升级 `error_parser` 输出并保证 fingerprint 稳定
+- [x] A2. 升级 `error_parser` 输出并保证 fingerprint 稳定
 - [ ] A3. `StateStore` 增加 `write_error`/`write_patch_plan`/`write_patch_diff`
 - [ ] A4. `PatchApplier` 增加 dry-run 与最小 rollback（失败后自动恢复原文）
 - [ ] A5. `run_loop` 按迭代输出 `error.json` 与 `patch_plan.json`
