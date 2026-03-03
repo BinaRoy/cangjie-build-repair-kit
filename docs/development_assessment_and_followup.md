@@ -104,7 +104,7 @@
 - [x] A2. 升级 `error_parser` 输出并保证 fingerprint 稳定
 - [x] A3. `StateStore` 增加 `write_error`/`write_patch_plan`/`write_patch_diff`
 - [x] A4. `PatchApplier` 增加 dry-run 与最小 rollback（失败后自动恢复原文）
-- [ ] A5. `run_loop` 按迭代输出 `error.json` 与 `patch_plan.json`
+- [x] A5. `run_loop` 按迭代输出 `error.json` 与 `patch_plan.json`
 - [ ] A6. 增加回归测试：fingerprint 稳定性、rollback 生效、产物文件存在
 
 ### Milestone B（P1）模块边界重构
@@ -226,3 +226,10 @@
 - 验证命令: python3 -m unittest discover -s tests -q
 - 结果: PASS
 - 风险/待办: A5 未完成：loop 尚未落盘 error.json/patch_plan.json
+
+### Update 2026-03-03
+- 变更: run_loop 按失败迭代落盘 error 与 patch_plan 产物，并补充回归测试
+- 影响模块: driver/loop.py, tests/test_loop_artifacts.py
+- 验证命令: python3 -m unittest discover -s tests -q
+- 结果: PASS
+- 风险/待办: A6 未完成：尚缺 rollback 生效与产物存在的更完整回归集合

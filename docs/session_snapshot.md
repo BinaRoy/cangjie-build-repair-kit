@@ -1,17 +1,17 @@
 # Session Snapshot
 
-- generated_at: `2026-03-03T12:04:28Z`
+- generated_at: `2026-03-03T13:08:48Z`
 - source_guide: `/home/gloria/tianyue/cangjie-build-repair-kit/docs/development_assessment_and_followup.md`
 
 ## Git
 - branch: `main`
-- latest_commit: `a8efd3d feat: add state store artifacts writers for milestone A3`
+- latest_commit: `a196181 feat: add dry-run and rollback support in patch applier`
 
 ### status --short
 ```text
 M docs/development_assessment_and_followup.md
- M repair/patcher.py
-?? tests/test_patcher.py
+ M driver/loop.py
+?? tests/test_loop_artifacts.py
 ```
 
 ## Milestone Checklist
@@ -19,7 +19,7 @@ M docs/development_assessment_and_followup.md
 - [x] A2. 升级 `error_parser` 输出并保证 fingerprint 稳定
 - [x] A3. `StateStore` 增加 `write_error`/`write_patch_plan`/`write_patch_diff`
 - [x] A4. `PatchApplier` 增加 dry-run 与最小 rollback（失败后自动恢复原文）
-- [ ] A5. `run_loop` 按迭代输出 `error.json` 与 `patch_plan.json`
+- [x] A5. `run_loop` 按迭代输出 `error.json` 与 `patch_plan.json`
 - [ ] A6. 增加回归测试：fingerprint 稳定性、rollback 生效、产物文件存在
 - [ ] B1. 新增 `repair/strategies/base.py`（`propose(error, context)->PatchPlan`）
 - [ ] B2. 将当前规则策略迁移到 `repair/strategies/rule_based.py`
