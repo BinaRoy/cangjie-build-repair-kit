@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, Callable, Protocol
 
 from adapters.base import BuildAdapter
 from driver.contracts import (
+    ErrorSchema,
     IterationRecord,
+    PatchPlan,
+    PatchResult,
     PolicyConfig,
     ProjectConfig,
     RunSummary,
@@ -15,8 +19,13 @@ from driver.preflight import run_preflight
 from knowledge.retriever import retrieve_knowledge
 from repair.error_parser import extract_root_cause
 from repair.patcher import apply_patch_plan
-from repair.planner import propose_patch_plan
+from repair.strategies.rule_based import RuleBasedStrategy
 from repair.validators import validate_patch_result
+
+
+class StrategyProtocol(Protocol):
+    def propose(self, error: ErrorSchema, context: Any) -> PatchPlan:
+        raise NotImplementedError
 
 
 def run_loop(
@@ -25,8 +34,13 @@ def run_loop(
     project: ProjectConfig,
     policy: PolicyConfig,
     adapter: BuildAdapter,
+    parser: Callable[[str], ErrorSchema] = extract_root_cause,
+    strategy: StrategyProtocol | None = None,
+    applier: Callable[[PatchPlan, ProjectConfig, PolicyConfig], PatchResult] = apply_patch_plan,
+    verifier: Callable[[PatchResult, ProjectConfig, PolicyConfig, set[str]], tuple[bool, str]] = validate_patch_result,
 ) -> RunSummary:
     store = StateStore(base_dir / "runs", run_id)
+    active_strategy = strategy or RuleBasedStrategy()
     if policy.require_preflight:
         preflight = run_preflight(project)
         store.write_preflight(to_dict(preflight))
@@ -74,7 +88,7 @@ def run_loop(
             stop_reason = "verify_passed"
             break
 
-        error = extract_root_cause((verify.stderr or "") + "\n" + (verify.stdout or ""))
+        error = parser((verify.stderr or "") + "\n" + (verify.stdout or ""))
         store.write_error(i, to_dict(error))
         empty_patch_plan = {
             "can_apply": False,
@@ -166,11 +180,11 @@ def run_loop(
                 stop_reason = decision
                 break
 
-        patch_plan = propose_patch_plan(error, knowledge_hits)
+        patch_plan = active_strategy.propose(error, {"knowledge_hits": knowledge_hits})
         store.write_patch_plan(i, to_dict(patch_plan))
-        patch_result = apply_patch_plan(patch_plan, project, policy)
+        patch_result = applier(patch_plan, project, policy)
 
-        gate_ok, gate_msg = validate_patch_result(patch_result, project, policy, changed_history)
+        gate_ok, gate_msg = verifier(patch_result, project, policy, changed_history)
         if patch_result.applied:
             changed_history.update(patch_result.changed_files)
 
