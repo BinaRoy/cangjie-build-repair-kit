@@ -37,6 +37,11 @@ cangjie-repair init --template ui --output-dir .\my-configs --project-name my-ui
 cangjie-repair init --template non_ui --output-dir .\my-configs --project-name my-lib --workdir .
 ```
 
+Validate config schema and command/path availability:
+```powershell
+cangjie-repair validate --project-config configs/project.helloworld.toml --policy-config configs/policy.default.toml
+```
+
 Export product bundle (filtered):
 ```powershell
 cangjie-repair export --output-dir .\dist\product_bundle --force

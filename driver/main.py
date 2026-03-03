@@ -4,6 +4,8 @@ import argparse
 import datetime as dt
 import os
 import re
+import shlex
+import shutil
 import uuid
 from pathlib import Path
 from typing import Sequence
@@ -11,6 +13,7 @@ from typing import Sequence
 from adapters.cjpm_adapter import CjpmAdapter
 from adapters.hvigor_adapter import HvigorAdapter
 from driver.contracts import PolicyConfig, ProjectConfig
+from driver.env_setup import build_env_with_toolchain
 from driver.loop import run_loop
 from driver.packaging import export_product_bundle
 from driver.reporting import generate_run_report
@@ -118,6 +121,125 @@ def _run_command(project_config: str, policy_config: str, run_id: str = "") -> i
     return 0 if summary.final_status == "success" else 1
 
 
+def _validate_schema(project_config: str, policy_config: str) -> tuple[ProjectConfig, PolicyConfig]:
+    project_cfg_path = Path(project_config).resolve()
+    project_data = _normalize_project_config(_load_toml(project_cfg_path), project_cfg_path)
+    policy_data = _load_toml(Path(policy_config))
+    return ProjectConfig(**project_data), PolicyConfig(**policy_data)
+
+
+def _looks_like_path_token(token: str) -> bool:
+    return (
+        "/" in token
+        or "\\" in token
+        or token.lower().endswith((".cmd", ".bat", ".ps1", ".sh", ".py", ".exe"))
+    )
+
+
+def _extract_required_commands(command: str) -> list[str]:
+    try:
+        tokens = shlex.split(command, posix=False)
+    except ValueError:
+        return []
+    if not tokens:
+        return []
+
+    required = [tokens[0]]
+    wrappers = {"cmd", "cmd.exe", "powershell", "powershell.exe", "pwsh", "pwsh.exe", "bash", "sh"}
+    head = tokens[0].lower()
+    if head in wrappers and len(tokens) > 1:
+        marker_index = None
+        if head.startswith("cmd"):
+            for i, token in enumerate(tokens[1:], start=1):
+                if token.lower() in ("/c", "/k"):
+                    marker_index = i
+                    break
+        else:
+            for i, token in enumerate(tokens[1:], start=1):
+                if token in ("-c", "-Command", "-command", "-File", "-file"):
+                    marker_index = i
+                    break
+        if marker_index is not None and marker_index + 1 < len(tokens):
+            nested = tokens[marker_index + 1]
+            nested_cmds = _extract_required_commands(nested)
+            if nested_cmds:
+                required.extend(nested_cmds)
+            else:
+                required.append(nested)
+        elif len(tokens) > 1:
+            required.append(tokens[1])
+    return required
+
+
+def _check_command_availability(command: str, workdir: Path) -> list[str]:
+    issues: list[str] = []
+    candidates = _extract_required_commands(command)
+    if not candidates:
+        return ["verify_command is empty or cannot be parsed"]
+
+    env = build_env_with_toolchain()
+    for token in candidates:
+        if _looks_like_path_token(token):
+            token_path = Path(token)
+            if not token_path.is_absolute():
+                token_path = (workdir / token_path).resolve()
+            if not token_path.exists():
+                issues.append(f"command path not found: {token_path.as_posix()}")
+        else:
+            if shutil.which(token, path=env.get("PATH")) is None:
+                issues.append(f"command not found in PATH: {token}")
+    return issues
+
+
+def _validate_command(project_config: str, policy_config: str) -> int:
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    try:
+        project, _ = _validate_schema(project_config, policy_config)
+    except Exception as exc:
+        print(f"validate: FAIL schema error: {exc}")
+        return 1
+
+    workdir = Path(project.workdir).resolve()
+    if not workdir.exists():
+        errors.append(f"workdir not found: {workdir.as_posix()}")
+    elif not workdir.is_dir():
+        errors.append(f"workdir is not a directory: {workdir.as_posix()}")
+
+    for rel in project.editable_paths:
+        p = (workdir / rel).resolve()
+        if not p.exists():
+            errors.append(f"editable path not found: {p.as_posix()}")
+    for rel in project.readonly_paths:
+        p = (workdir / rel).resolve()
+        if not p.exists():
+            errors.append(f"readonly path not found: {p.as_posix()}")
+    for rel in project.artifact_checks:
+        p = (workdir / rel).resolve()
+        if not p.exists():
+            warnings.append(f"artifact missing before build: {p.as_posix()}")
+
+    if workdir.exists() and workdir.is_dir():
+        errors.extend(_check_command_availability(project.verify_command, workdir))
+
+    if errors:
+        print("validate: FAIL")
+        for msg in errors:
+            print(f"- error: {msg}")
+        for msg in warnings:
+            print(f"- warning: {msg}")
+        return 1
+
+    print("validate: OK")
+    print(f"- project: {project.project_name}")
+    print(f"- workdir: {workdir.as_posix()}")
+    if warnings:
+        for msg in warnings:
+            print(f"- warning: {msg}")
+    return 0
+
+
 def _init_command(template: str, output_dir: str, project_name: str, workdir: str, force: bool) -> int:
     out = Path(output_dir).resolve()
     out.mkdir(parents=True, exist_ok=True)
@@ -201,6 +323,10 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     export.add_argument("--output-dir", required=True)
     export.add_argument("--force", action="store_true")
 
+    validate = sub.add_parser("validate", help="validate config schema and command/path availability")
+    validate.add_argument("--project-config", required=True)
+    validate.add_argument("--policy-config", required=True)
+
     # Legacy mode compatibility: supports old direct run flags.
     parser.add_argument("--project-config")
     parser.add_argument("--policy-config")
@@ -218,13 +344,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         out = export_product_bundle(base_dir=base_dir, output_dir=Path(args.output_dir), force=args.force)
         print(f"exported product bundle: {out.as_posix()}")
         return 0
+    if args.command == "validate":
+        return _validate_command(args.project_config, args.policy_config)
     if args.command == "run":
         return _run_command(args.project_config, args.policy_config, args.run_id)
 
     # Legacy fallback: keep existing scripts working.
     if args.project_config and args.policy_config:
         return _run_command(args.project_config, args.policy_config, args.run_id)
-    raise SystemExit("Use `run` or `init` subcommand. Example: cangjie-repair run --project-config ...")
+    raise SystemExit(
+        "Use `run`, `validate`, `init` or `export` subcommand. "
+        "Example: cangjie-repair run --project-config ..."
+    )
 
 
 if __name__ == "__main__":
