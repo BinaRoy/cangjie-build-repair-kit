@@ -4,6 +4,7 @@ This is a minimal, configurable build -> diagnose -> repair-plan -> rebuild work
 
 ## What it does now
 - Runs project verify command through adapter.
+- Supports dual-gate verification: `verify_command` (build) then `test_command` (test).
 - Extracts root cause from logs.
 - Retrieves lightweight Cangjie knowledge snippets.
 - Produces structured per-iteration records under `runs/<run_id>/`.
@@ -42,6 +43,12 @@ Validate config schema and command/path availability:
 cangjie-repair validate --project-config configs/project.helloworld.toml --policy-config configs/policy.default.toml
 ```
 
+Dual-gate config example:
+```toml
+verify_command = "cjpm build"
+test_command = "cjpm test"
+```
+
 Export product bundle (filtered):
 ```powershell
 cangjie-repair export --output-dir .\dist\product_bundle --force
@@ -70,6 +77,7 @@ Outputs:
 2. Generate config: `cangjie-repair init --template <ui|non_ui> --output-dir <dir> --project-name <name> --workdir <target-project-root>`
 3. Edit generated `project.<name>.toml`:
    - set `verify_command` to your project build command
+   - set `test_command` to your project test command (optional but recommended)
    - set `editable_paths` to directories allowed to change
 4. Run: `cangjie-repair run --project-config <project.toml> --policy-config <policy.toml>`
 

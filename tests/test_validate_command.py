@@ -68,6 +68,36 @@ class ValidateCommandTests(unittest.TestCase):
 
             self.assertEqual(_validate_command(str(project_cfg), str(policy_cfg)), 1)
 
+    def test_validate_command_fails_when_test_command_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workdir = root / "work"
+            (workdir / "src").mkdir(parents=True)
+            (workdir / "readonly").mkdir(parents=True)
+
+            project_cfg = root / "project.toml"
+            policy_cfg = root / "policy.toml"
+            project_cfg.write_text(
+                "\n".join(
+                    [
+                        'project_name = "bad-test-command"',
+                        'project_type = "non_ui"',
+                        f'workdir = "{workdir.as_posix()}"',
+                        'adapter = "cjpm"',
+                        'verify_command = "python --version"',
+                        'test_command = "definitely_missing_test_cmd_123456 --help"',
+                        "command_timeout_sec = 60",
+                        'editable_paths = ["src"]',
+                        'readonly_paths = ["readonly"]',
+                        "artifact_checks = []",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            policy_cfg.write_text("", encoding="utf-8")
+
+            self.assertEqual(_validate_command(str(project_cfg), str(policy_cfg)), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

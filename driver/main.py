@@ -191,6 +191,13 @@ def _check_command_availability(command: str, workdir: Path) -> list[str]:
     return issues
 
 
+def _resolve_path_issue(rel: str, workdir: Path, label: str) -> str | None:
+    p = (workdir / rel).resolve()
+    if not p.exists():
+        return f"{label} not found: {p.as_posix()}"
+    return None
+
+
 def _validate_command(project_config: str, policy_config: str) -> int:
     errors: list[str] = []
     warnings: list[str] = []
@@ -208,13 +215,13 @@ def _validate_command(project_config: str, policy_config: str) -> int:
         errors.append(f"workdir is not a directory: {workdir.as_posix()}")
 
     for rel in project.editable_paths:
-        p = (workdir / rel).resolve()
-        if not p.exists():
-            errors.append(f"editable path not found: {p.as_posix()}")
+        issue = _resolve_path_issue(rel, workdir, "editable path")
+        if issue:
+            errors.append(issue)
     for rel in project.readonly_paths:
-        p = (workdir / rel).resolve()
-        if not p.exists():
-            errors.append(f"readonly path not found: {p.as_posix()}")
+        issue = _resolve_path_issue(rel, workdir, "readonly path")
+        if issue:
+            warnings.append(issue)
     for rel in project.artifact_checks:
         p = (workdir / rel).resolve()
         if not p.exists():
@@ -222,6 +229,8 @@ def _validate_command(project_config: str, policy_config: str) -> int:
 
     if workdir.exists() and workdir.is_dir():
         errors.extend(_check_command_availability(project.verify_command, workdir))
+        if project.test_command.strip():
+            errors.extend(_check_command_availability(project.test_command, workdir))
 
     if errors:
         print("validate: FAIL")
@@ -258,6 +267,7 @@ def _init_command(template: str, output_dir: str, project_name: str, workdir: st
             f'workdir = "{wd}"\n'
             'adapter = "hvigor"\n'
             'verify_command = "hvigorw.bat --mode module -p module=entry -p product=default clean assembleHap --no-daemon"\n'
+            'test_command = "hvigorw.bat --mode module -p module=entry -p product=default test --no-daemon"\n'
             "command_timeout_sec = 1200\n"
             'editable_paths = ["entry/src/main/cangjie", "entry/cjpm.toml"]\n'
             'readonly_paths = ["AppScope", ".hvigor", "oh_modules"]\n'
@@ -270,6 +280,7 @@ def _init_command(template: str, output_dir: str, project_name: str, workdir: st
             f'workdir = "{wd}"\n'
             'adapter = "cjpm"\n'
             'verify_command = "cjpm build"\n'
+            'test_command = "cjpm test"\n'
             "command_timeout_sec = 600\n"
             'editable_paths = ["src", "cjpm.toml"]\n'
             'readonly_paths = ["target", ".git", "build"]\n'

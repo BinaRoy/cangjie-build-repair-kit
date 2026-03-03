@@ -12,6 +12,7 @@ class ProjectConfig:
     workdir: str
     adapter: str
     verify_command: str
+    test_command: str = ""
     command_timeout_sec: int = 600
     editable_paths: list[str] = field(default_factory=list)
     readonly_paths: list[str] = field(default_factory=list)

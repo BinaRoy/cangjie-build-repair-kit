@@ -3,6 +3,7 @@ project_type = "non_ui"
 workdir = "../examples/nonui_hello"
 adapter = "cjpm"
 verify_command = "cjpm build"
+test_command = "cjpm test"
 command_timeout_sec = 600
 editable_paths = ["src", "cjpm.toml"]
 readonly_paths = ["target", ".git", "build"]

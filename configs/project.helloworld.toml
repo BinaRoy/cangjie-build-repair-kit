@@ -3,6 +3,7 @@ project_type = "ui"
 workdir = "../.."
 adapter = "hvigor"
 verify_command = "cmd /c run_hvigor.cmd"
+test_command = "cmd /c run_hvigor.cmd"
 command_timeout_sec = 1200
 editable_paths = ["entry/src/main/cangjie", "entry/cjpm.toml"]
 readonly_paths = ["AppScope", ".hvigor", "oh_modules"]

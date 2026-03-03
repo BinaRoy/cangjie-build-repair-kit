@@ -12,7 +12,9 @@ from driver.env_setup import build_env_with_toolchain
 class CjpmAdapter(BuildAdapter):
     def verify(self, project: ProjectConfig) -> VerifyResult:
         start = time.time()
-        proc = subprocess.run(
+        env = build_env_with_toolchain()
+
+        build_proc = subprocess.run(
             project.verify_command,
             cwd=Path(project.workdir),
             shell=True,
@@ -21,14 +23,36 @@ class CjpmAdapter(BuildAdapter):
             timeout=project.command_timeout_sec,
             encoding="utf-8",
             errors="replace",
-            env=build_env_with_toolchain(),
+            env=env,
         )
+        output = [f"[build] $ {project.verify_command}", build_proc.stdout, build_proc.stderr]
+        final_code = build_proc.returncode
+        final_success = build_proc.returncode == 0
+        command = project.verify_command
+
+        if final_success and project.test_command.strip():
+            test_proc = subprocess.run(
+                project.test_command,
+                cwd=Path(project.workdir),
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=project.command_timeout_sec,
+                encoding="utf-8",
+                errors="replace",
+                env=env,
+            )
+            output.extend([f"[test] $ {project.test_command}", test_proc.stdout, test_proc.stderr])
+            final_code = test_proc.returncode
+            final_success = test_proc.returncode == 0
+            command = f"{project.verify_command} && {project.test_command}"
+
         return VerifyResult(
-            success=proc.returncode == 0,
-            exit_code=proc.returncode,
+            success=final_success,
+            exit_code=final_code,
             duration_sec=round(time.time() - start, 3),
-            command=project.verify_command,
-            stdout=proc.stdout,
-            stderr=proc.stderr,
+            command=command,
+            stdout="\n".join([x for x in output if x and x.strip()]),
+            stderr="",
             artifact_checks={},
         )
