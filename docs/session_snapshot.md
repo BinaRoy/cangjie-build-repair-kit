@@ -1,31 +1,22 @@
 # Session Snapshot
 
-- generated_at: `2026-03-03T11:41:35Z`
+- generated_at: `2026-03-03T11:48:22Z`
 - source_guide: `/home/gloria/tianyue/cangjie-build-repair-kit/docs/development_assessment_and_followup.md`
 
 ## Git
 - branch: `main`
-- latest_commit: `8bfcff2 feat: enforce build+test dual-gate via test_command`
+- latest_commit: `3deb0c6 feat: add session handoff and followup maintenance tooling`
 
 ### status --short
 ```text
-M README.md
- M driver/main.py
- M tests/test_validate_command.py
-?? docs/development_assessment_and_followup.md
-?? docs/session_snapshot.md
-?? driver/doc_maintenance.py
-?? driver/session_snapshot.py
-?? scripts/doc_update.ps1
-?? scripts/doc_update.sh
-?? scripts/session_snapshot.ps1
-?? scripts/session_snapshot.sh
-?? tests/test_doc_maintenance.py
-?? tests/test_session_snapshot.py
+M docs/development_assessment_and_followup.md
+ M docs/session_snapshot.md
+ M driver/contracts.py
+?? tests/test_error_schema.py
 ```
 
 ## Milestone Checklist
-- [ ] A1. 定义 `ErrorSchema`：`category/file/line/message/context/fingerprint`
+- [x] A1. 定义 `ErrorSchema`：`category/file/line/message/context/fingerprint`
 - [ ] A2. 升级 `error_parser` 输出并保证 fingerprint 稳定
 - [ ] A3. `StateStore` 增加 `write_error`/`write_patch_plan`/`write_patch_diff`
 - [ ] A4. `PatchApplier` 增加 dry-run 与最小 rollback（失败后自动恢复原文）

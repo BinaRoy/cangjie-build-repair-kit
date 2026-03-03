@@ -100,7 +100,7 @@
 
 ### Milestone A（P0）审计与可回滚闭环
 
-- [ ] A1. 定义 `ErrorSchema`：`category/file/line/message/context/fingerprint`
+- [x] A1. 定义 `ErrorSchema`：`category/file/line/message/context/fingerprint`
 - [ ] A2. 升级 `error_parser` 输出并保证 fingerprint 稳定
 - [ ] A3. `StateStore` 增加 `write_error`/`write_patch_plan`/`write_patch_diff`
 - [ ] A4. `PatchApplier` 增加 dry-run 与最小 rollback（失败后自动恢复原文）
@@ -198,3 +198,10 @@
 - 验证命令: python3 -m unittest discover -s tests -q
 - 结果: PASS（11 tests）
 - 风险/待办: 仍需按 Milestone A 推进 error schema/fingerprint/rollback
+
+### Update 2026-03-03
+- 变更: 新增 ErrorSchema 数据结构并补充字段完整性测试
+- 影响模块: driver/contracts.py, tests/test_error_schema.py
+- 验证命令: python3 -m unittest discover -s tests -q
+- 结果: PASS
+- 风险/待办: A2 尚未开始：error_parser 尚未输出 file/line/fingerprint

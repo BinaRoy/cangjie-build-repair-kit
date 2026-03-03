@@ -61,6 +61,16 @@ class ErrorBlock:
 
 
 @dataclass
+class ErrorSchema:
+    category: str
+    file: str
+    line: int | None
+    message: str
+    context: str
+    fingerprint: str
+
+
+@dataclass
 class KnowledgeItem:
     source: str
     title: str
