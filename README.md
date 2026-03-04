@@ -60,7 +60,7 @@ So the current version is already usable as a runnable, verifiable, and traceabl
 Since usable MCP options are already available, the order is:
 MCP first, then real LLM, then multi-model expansion.
 
-### Phase 1: Integrate MCP first (3-5 days)
+### Phase 1: Integrate MCP first 
 
 Goals:
 
@@ -73,7 +73,7 @@ Delivery criteria:
 - The same error can return traceable sources in both local and mcp modes (`source` is checkable).
 - If MCP is unavailable, the run automatically falls back to local mode and continues.
 
-### Phase 2: Integrate a real LLM (1-2 weeks)
+### Phase 2: Integrate a real LLM 
 
 Goals:
 
@@ -86,7 +86,7 @@ Delivery criteria:
 - On at least one non-UI sample where rule strategy cannot fix the issue, LLM strategy provides an executable patch plan.
 - Audit artifacts are fully persisted (error / patch_plan / diff / summary).
 
-### Phase 3: Multi-model expansion (1 week)
+### Phase 3: Multi-model expansion 
 
 Goals:
 
