@@ -1,4 +1,4 @@
-# Cangjie Build-Repair 工程评估与后续开发跟踪（2026-03-03）
+# Cangjie Build-Repair 工程评估与后续开发跟踪（2026-03-04）
 
 ## 0. 文档目的
 
@@ -33,14 +33,12 @@
 - 支持结构化运行产出（`runs/<run_id>/iter_*.json`、`summary.json`、`report.md`）
 - 支持模板化配置生成、配置校验、产品打包导出
 
-### 1.3 未实现但指导文档要求的关键能力
+### 1.3 当前阶段剩余关键能力（下一阶段目标）
 
-- 错误对象缺失 `file/line/fingerprint` 标准字段
-- 缺失稳定错误指纹去重机制（当前仅 `family` 维度计数）
-- 缺失 patch `dry-run`、`rollback`、`diff` 持久化
-- 缺失 `RepairStrategy` 抽象接口与可插拔策略目录（当前为单函数）
-- 缺失独立 `Verifier` 模块（当前验证逻辑在 adapter + loop 中分散）
-- 运行产出未对齐指导基线（无 `error.json`、`patch_plan.json`、`patch.diff`、`logs/` 分层）
+- MCP 知识源尚未接入主检索链路（当前以本地检索为主）
+- 失败案例归档与复用机制尚未落地（未形成可检索 case memory）
+- 真实 LLM provider 尚未接入（当前为 mock 策略）
+- 多模型路由策略尚未落地（当前单策略主导）
 
 ### 1.4 潜在耦合风险
 
@@ -60,39 +58,38 @@
 - 存在运行记录机制：`StateStore` + `reporting`
 - Patch 有安全约束（文件范围、行数限制、scaffold 检测）
 
-### 2.2 不符合项（必须修正）
+### 2.2 历史不符合项（已关闭）
 
-- 无标准化 `fingerprint` 字段，不满足“重复错误判停”的稳定要求
-- `LogParser` 输出字段不完整（缺 `file/line/category/context/fingerprint`）
-- 无回滚机制，不满足“可回滚”
-- 无 patch diff 产物，不满足审计闭环
-- `RepairStrategy` 未抽象化，不满足 LLMStrategy/HybridStrategy 插拔基线
-- 运行目录结构未完全对齐指导规范
+- `fingerprint` 缺失 -> 已实现稳定指纹
+- `LogParser` 字段不完整 -> 已升级为结构化 ErrorSchema
+- patch 无回滚与 diff -> 已支持 dry-run/rollback/diff
+- 策略不可插拔 -> 已完成 RepairStrategy 抽象与 mock LLM 协议
+- loop 与模块耦合高 -> 已支持依赖注入与契约测试
 
-### 2.3 需要重构项（建议尽快）
+### 2.3 当前新增关注项（下一阶段）
 
-- 将验证逻辑沉淀到独立 `Verifier`（统一判定 build/test/artifact）
-- 让 `LoopController` 通过接口依赖（parser/strategy/applier/verifier）
-- 把现有 dataclass 拆分为显式 schema 模块（error/patch/run）
+- 知识层 provider 扩展（local/mcp/hybrid）
+- 经验复用（failure case 归档与检索）
+- 真实 LLM 集成下的安全与可解释性
+- 多模型路由下的可复现性
+### 2.4 下一阶段优先级排序
 
-### 2.4 重构优先级排序
-
-- P0（立刻）：错误 schema + 指纹 + 运行记录标准化 + 回滚最小实现
-- P1（短期）：策略接口抽象 + Verifier 模块化 + loop 解耦
-- P2（中期）：LLMStrategy 协议落地（仍经 PatchApplier 执行）
+- P0（立刻）：MCP 接入与回退机制（不中断 run）
+- P1（短期）：failure case 归档与检索复用
+- P2（中期）：真实 LLM 接入与多模型路由
 
 ---
 
 ## 3. 第三步：改进建议（当前阶段定位）
 
-当前仓库已处于“阶段 1：规则闭环可运行”的中前段，但与目标基线还差“可审计细粒度”和“可插拔边界”。
+当前仓库已完成基础可控闭环（A/B/C），并具备“规则 + mock LLM + 安全门禁 + 可审计产物”的初步模型。下一阶段重点从“能跑”转为“能持续学会修”。
 
-最小可实现目标（MVP+1）应是：
+下一阶段最小目标：
 
-1. 任何失败都能沉淀 `error.json`（含稳定 fingerprint）  
-2. 任何 patch 尝试都能沉淀 `patch_plan.json` 与 `patch.diff`  
-3. patch 应用失败可回滚（至少单文件级回滚）  
-4. loop 只依赖接口，不依赖具体策略实现  
+1. 知识输入升级：接入 MCP，但保持 local 回退  
+2. 经验可复用：落地 failure case 归档与检索  
+3. 模型可控升级：接入真实 LLM，仍只允许输出 PatchPlan  
+4. 策略可扩展：支持最小多模型路由并可复现
 
 ---
 
@@ -121,14 +118,45 @@
 - [x] C2. 增加 mock strategy 适配层，验证不绕过 PatchApplier
 - [x] C3. 明确安全红线测试：不得直接写文件/不得控制 loop
 
+### Milestone D（P0）MCP 知识接入（3-5 天）
+
+- [ ] D1. 定义 `KnowledgeProvider` 抽象与 provider 配置项（`local|mcp|hybrid`）
+- [ ] D2. 实现 MCP provider 适配层（输入错误上下文，输出结构化 KnowledgeItem）
+- [ ] D3. 实现 hybrid 回退策略（MCP 失败自动回落 local）
+- [ ] D4. 在 `iter_<n>.json` 中补充 `knowledge_sources` 与 provider 决策记录
+- [ ] D5. 增加回归测试：MCP 正常、MCP 失败回退、source 可追溯
+
+### Milestone E（P1）失败案例归档与复用（1 周）
+
+- [ ] E1. 设计 `failure_cases/` 数据结构（fingerprint、上下文、plan、result、case_id）
+- [ ] E2. 每轮失败自动写入 case 归档（去重策略按 fingerprint）
+- [ ] E3. 方案生成前接入相似 case 检索（Top-K）
+- [ ] E4. 在 patch 计划中记录引用 case_id 与命中理由
+- [ ] E5. 增加回归测试：同类错误二次出现时命中历史 case
+
+### Milestone F（P2）真实 LLM 接入（1-2 周）
+
+- [ ] F1. 用真实 provider 替换 `MockLLMStrategy`（保留接口不变）
+- [ ] F2. 强制 LLM 输入包含：错误结构化对象 + 知识来源 + 历史 case
+- [ ] F3. 强制 LLM 输出校验：仅允许结构化 PatchPlan
+- [ ] F4. 增加安全回归：禁止直写、越界修改、无证据 patch
+- [ ] F5. 在 1 个 non-UI 样例验证“规则失败但 LLM 可修复”
+
+### Milestone G（P2）多模型最小路由（1 周）
+
+- [ ] G1. 增加模型 provider 配置（至少 2 个可切换）
+- [ ] G2. 增加路由规则（按错误类型/复杂度）
+- [ ] G3. 路由决策写入迭代记录（可追踪）
+- [ ] G4. 增加可复现性回归：同输入同路由结果
+- [ ] G5. 输出周度对比报表（成功率/轮次/耗时/安全事件）
+
 ---
 
 ## 5. 验证基线（每次迭代都要跑）
 
-当前环境实际检查（2026-03-03）：
+当前环境实际检查（2026-03-04）：
 
-- `python3 -m unittest discover -s tests -q` 可执行，但存在 1 个失败用例
-- 失败点：`tests/test_validate_command.py` 中依赖 `python` 命令名，当前环境仅有 `python3`
+- `python3 -m unittest discover -s tests -q` 可执行且通过（37 tests）
 
 后续统一验证命令建议：
 
@@ -190,7 +218,14 @@
 
 ## 8. 当前结论（一句话）
 
-工程主干闭环已可运行，但距离 Development Guide 基线仍有 4 个关键缺口：`错误标准化`、`审计产物完整性`、`回滚机制`、`策略接口解耦`；后续开发应优先完成 Milestone A。
+工程基础闭环（A/B/C）已完成，下一阶段进入“Agent 协同可控修复”建设：优先落地 MCP 知识接入与 failure case 复用，再接真实 LLM 与多模型路由。
+
+### Update 2026-03-04
+- 变更: 将后续执行清单从 A/B/C 完结阶段切换为 D/E/F/G（MCP -> case memory -> real LLM -> multi-model）
+- 影响模块: docs/development_assessment_and_followup.md
+- 验证命令: 文档更新（无代码变更）
+- 结果: PASS
+- 风险/待办: D1-D5 尚未开始，需要先确定 MCP provider 接口与配置字段
 
 ### Update 2026-03-03
 - 变更: 新增会话快照与文档维护脚本，并接入 CLI 子命令
