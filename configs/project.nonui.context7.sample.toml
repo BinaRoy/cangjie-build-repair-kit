@@ -1,17 +1,17 @@
-﻿project_name = "nonui-sample"
+project_name = "nonui-context7"
 project_type = "non_ui"
 workdir = "../examples/nonui_hello"
 adapter = "cjpm"
 verify_command = "cjpm build"
 test_command = "cjpm test"
 command_timeout_sec = 600
-knowledge_provider = "local"
+knowledge_provider = "mcp"
 mcp_server_command = ""
 mcp_server_args = []
-mcp_server_url = ""
-mcp_headers = []
+mcp_server_url = "https://mcp.context7.com/mcp"
+mcp_headers = ["CONTEXT7_API_KEY=${ctx7sk-ba204e3a-935a-4751-95c2-e51f1ebffb58}"]
 mcp_tool_name = "query-docs"
-mcp_timeout_sec = 15
+mcp_timeout_sec = 20
 mcp_max_items = 5
 repair_strategy = "rule_based"
 llm_api_url = ""

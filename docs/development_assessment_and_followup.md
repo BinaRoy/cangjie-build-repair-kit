@@ -120,35 +120,35 @@
 
 ### Milestone D（P0）MCP 知识接入（3-5 天）
 
-- [ ] D1. 定义 `KnowledgeProvider` 抽象与 provider 配置项（`local|mcp|hybrid`）
-- [ ] D2. 实现 MCP provider 适配层（输入错误上下文，输出结构化 KnowledgeItem）
-- [ ] D3. 实现 hybrid 回退策略（MCP 失败自动回落 local）
-- [ ] D4. 在 `iter_<n>.json` 中补充 `knowledge_sources` 与 provider 决策记录
-- [ ] D5. 增加回归测试：MCP 正常、MCP 失败回退、source 可追溯
+- [x] D1. 定义 `KnowledgeProvider` 抽象与 provider 配置项（`local|mcp|hybrid`）
+- [x] D2. 实现 MCP provider 适配层（输入错误上下文，输出结构化 KnowledgeItem）
+- [x] D3. 实现 hybrid 回退策略（MCP 失败自动回落 local）
+- [x] D4. 在 `iter_<n>.json` 中补充 `knowledge_sources` 与 provider 决策记录
+- [x] D5. 增加回归测试：MCP 正常、MCP 失败回退、source 可追溯
 
 ### Milestone E（P1）失败案例归档与复用（1 周）
 
-- [ ] E1. 设计 `failure_cases/` 数据结构（fingerprint、上下文、plan、result、case_id）
-- [ ] E2. 每轮失败自动写入 case 归档（去重策略按 fingerprint）
-- [ ] E3. 方案生成前接入相似 case 检索（Top-K）
-- [ ] E4. 在 patch 计划中记录引用 case_id 与命中理由
-- [ ] E5. 增加回归测试：同类错误二次出现时命中历史 case
+- [x] E1. 设计 `failure_cases/` 数据结构（fingerprint、上下文、plan、result、case_id）
+- [x] E2. 每轮失败自动写入 case 归档（去重策略按 fingerprint）
+- [x] E3. 方案生成前接入相似 case 检索（Top-K）
+- [x] E4. 在 patch 计划中记录引用 case_id 与命中理由
+- [x] E5. 增加回归测试：同类错误二次出现时命中历史 case
 
 ### Milestone F（P2）真实 LLM 接入（1-2 周）
 
-- [ ] F1. 用真实 provider 替换 `MockLLMStrategy`（保留接口不变）
-- [ ] F2. 强制 LLM 输入包含：错误结构化对象 + 知识来源 + 历史 case
-- [ ] F3. 强制 LLM 输出校验：仅允许结构化 PatchPlan
-- [ ] F4. 增加安全回归：禁止直写、越界修改、无证据 patch
-- [ ] F5. 在 1 个 non-UI 样例验证“规则失败但 LLM 可修复”
+- [x] F1. 用真实 provider 替换 `MockLLMStrategy`（保留接口不变）
+- [x] F2. 强制 LLM 输入包含：错误结构化对象 + 知识来源 + 历史 case
+- [x] F3. 强制 LLM 输出校验：仅允许结构化 PatchPlan
+- [x] F4. 增加安全回归：禁止直写、越界修改、无证据 patch
+- [x] F5. 在 1 个 non-UI 样例验证“规则失败但 LLM 可修复”
 
 ### Milestone G（P2）多模型最小路由（1 周）
 
-- [ ] G1. 增加模型 provider 配置（至少 2 个可切换）
-- [ ] G2. 增加路由规则（按错误类型/复杂度）
-- [ ] G3. 路由决策写入迭代记录（可追踪）
-- [ ] G4. 增加可复现性回归：同输入同路由结果
-- [ ] G5. 输出周度对比报表（成功率/轮次/耗时/安全事件）
+- [x] G1. 增加模型 provider 配置（至少 2 个可切换）
+- [x] G2. 增加路由规则（按错误类型/复杂度）
+- [x] G3. 路由决策写入迭代记录（可追踪）
+- [x] G4. 增加可复现性回归：同输入同路由结果
+- [x] G5. 输出周度对比报表（成功率/轮次/耗时/安全事件）
 
 ---
 
@@ -156,7 +156,7 @@
 
 当前环境实际检查（2026-03-04）：
 
-- `python3 -m unittest discover -s tests -q` 可执行且通过（37 tests）
+- `python3 -m unittest discover -s tests -q` 可执行且通过（73 tests）
 
 后续统一验证命令建议：
 
@@ -219,6 +219,132 @@
 ## 8. 当前结论（一句话）
 
 工程基础闭环（A/B/C）已完成，下一阶段进入“Agent 协同可控修复”建设：优先落地 MCP 知识接入与 failure case 复用，再接真实 LLM 与多模型路由。
+
+### Update 2026-03-04
+- 变更: 完成 G1-G5，多模型最小路由落地（双模型配置 + 类型/复杂度路由 + 路由决策落盘 + 可复现回归 + 周报输出）
+- 影响模块: repair/strategies/multi_llm.py, repair/strategies/__init__.py, driver/contracts.py, driver/loop.py, driver/main.py, driver/weekly_report.py, configs/project.nonui.sample.toml, configs/project.helloworld.toml, configs/project.nonui.context7.sample.toml, tests/test_multi_model_routing.py, tests/test_routing_reproducibility.py, tests/test_weekly_report.py, tests/test_validate_command.py, tests/test_loop_artifacts.py, docs/plans/2026-03-04-milestone-g1-g5-multi-model-routing.md
+- 验证命令: python3 -m unittest tests/test_multi_model_routing.py tests/test_routing_reproducibility.py tests/test_weekly_report.py -q; python3 -m driver.main weekly-report --runs-dir runs --output docs/weekly_model_report.md --days 7; python3 -m unittest discover -s tests -q
+- 结果: PASS（73 tests）
+- 风险/待办: 周报当前按 run_id 时间窗口聚合，若外部导入 run 目录命名不规范会被跳过
+
+### Update 2026-03-04
+- 变更: 完成 F5，新增 non-UI 样例端到端回归：同一错误下规则策略失败、真实 LLM 策略可修复并使循环最终成功
+- 影响模块: tests/test_regression_f5_nonui_llm_repair.py
+- 验证命令: python3 -m unittest tests/test_regression_f5_nonui_llm_repair.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（66 tests）
+- 风险/待办: Milestone F 已完成，下一阶段进入 Milestone G（多模型最小路由）
+
+### Update 2026-03-04
+- 变更: 完成 F4，新增真实 LLM 路径安全回归测试：无证据 patch 拦截、越界修改拦截、策略直写检测与回滚
+- 影响模块: tests/test_real_llm_safety.py
+- 验证命令: python3 -m unittest tests/test_real_llm_safety.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（65 tests）
+- 风险/待办: F5 未完成，尚缺 non-UI 样例里“规则失败但 LLM 可修复”的集成验证
+
+### Update 2026-03-04
+- 变更: 完成 F3，新增 LLM 输出硬校验模块，严格限制为结构化 PatchPlan（顶层字段与 action 字段均要求精确匹配）
+- 影响模块: repair/strategies/llm_output_validator.py, repair/strategies/real_llm.py, tests/test_real_llm_strategy.py
+- 验证命令: python3 -m unittest tests/test_real_llm_strategy.py tests/test_llm_strategy_schema.py tests/test_mock_llm_strategy.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（62 tests）
+- 风险/待办: F4 未完成，仍需补“禁止直写、越界修改、无证据 patch”的真实 LLM 路径安全回归
+
+### Update 2026-03-04
+- 变更: 完成 F2，LLMStrategyInput 与 RealLLM 请求体强制包含 `error` + `knowledge_sources` + `similar_cases`，并通过上下文透传
+- 影响模块: repair/strategies/llm.py, repair/strategies/real_llm.py, tests/test_real_llm_strategy.py
+- 验证命令: python3 -m unittest tests/test_real_llm_strategy.py tests/test_llm_strategy_schema.py tests/test_mock_llm_strategy.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（60 tests）
+- 风险/待办: F3 未完成，真实 LLM 输出尚未做“仅允许结构化 PatchPlan”的独立硬校验模块
+
+### Update 2026-03-04
+- 变更: 完成 F1，新增 RealLLMStrategy（OpenAI 兼容 HTTP provider）并支持 `repair_strategy=llm` 默认接线；保留接口契约不变
+- 影响模块: repair/strategies/real_llm.py, repair/strategies/__init__.py, driver/loop.py, driver/contracts.py, driver/main.py, configs/project.nonui.sample.toml, configs/project.helloworld.toml, configs/project.nonui.context7.sample.toml, tests/test_real_llm_strategy.py
+- 验证命令: python3 -m unittest tests/test_real_llm_strategy.py tests/test_validate_command.py tests/test_loop_injection.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（59 tests）
+- 风险/待办: F2 未完成，真实 LLM 请求尚未强制包含“知识来源 + 历史 case”输入约束
+
+### Update 2026-03-04
+- 变更: 完成 E5，新增端到端回归：同类错误首次归档后，二次出现可命中历史 case 并在 patch plan 中写入引用
+- 影响模块: tests/test_regression_e5_case_reuse.py
+- 验证命令: python3 -m unittest tests/test_regression_e5_case_reuse.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（57 tests）
+- 风险/待办: Milestone E 已完成，下一阶段进入 Milestone F（真实 LLM 接入）
+
+### Update 2026-03-04
+- 变更: 完成 E4，PatchPlan 新增 `referenced_case_ids` 与 `case_match_reason`，并在 loop 中基于 `similar_cases` 自动填充引用 case 信息
+- 影响模块: driver/contracts.py, driver/loop.py, tests/test_failure_case_reference.py
+- 验证命令: python3 -m unittest tests/test_failure_case_reference.py tests/test_failure_case_retrieval.py tests/test_loop_contracts.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（56 tests）
+- 风险/待办: E5 未完成，仍需验证“同类错误二次出现时命中历史 case”的端到端回归
+
+### Update 2026-03-04
+- 变更: 完成 E3，新增 failure case 相似检索（Top-K）并在策略生成前注入 `similar_cases` 上下文
+- 影响模块: driver/failure_cases.py, driver/loop.py, driver/contracts.py, driver/main.py, configs/policy.default.toml, tests/test_failure_case_retrieval.py, tests/test_failure_cases.py, tests/test_loop_contracts.py
+- 验证命令: python3 -m unittest tests/test_loop_contracts.py tests/test_failure_cases.py tests/test_failure_case_retrieval.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（55 tests）
+- 风险/待办: E4 未完成，patch plan 还未显式记录引用 case_id 与命中理由
+
+### Update 2026-03-04
+- 变更: 完成 E2，run_loop 每个失败迭代自动写入 failure case，并按 fingerprint 去重（重复错误复用已有 case 文件）
+- 影响模块: driver/loop.py, driver/failure_cases.py, tests/test_failure_case_archive.py
+- 验证命令: python3 -m unittest tests/test_failure_case_archive.py -q; python3 -m unittest tests/test_failure_cases.py tests/test_failure_case_archive.py tests/test_regression_d5_knowledge.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（53 tests）
+- 风险/待办: E3 未完成，策略生成前尚未接入历史 case 相似检索
+
+### Update 2026-03-04
+- 变更: 完成 E1，新增 failure case 数据结构与落盘目录设计（`failure_cases/<fingerprint_bucket>/<case_id>.json`）
+- 影响模块: driver/failure_cases.py, tests/test_failure_cases.py, docs/plans/2026-03-04-milestone-e1-failure-case-structure.md
+- 验证命令: python3 -m unittest tests/test_failure_cases.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（51 tests）
+- 风险/待办: E2 未完成，loop 尚未自动写入 failure case（当前仅有结构与存储接口）
+
+### Update 2026-03-04
+- 变更: 完成 D5，新增知识检索回归测试集，覆盖 `mcp` 正常命中、`hybrid` 下 MCP 异常回退 local、以及 `iter_<n>.json` source 可追溯
+- 影响模块: tests/test_regression_d5_knowledge.py
+- 验证命令: python3 -m unittest tests/test_regression_d5_knowledge.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（49 tests）
+- 风险/待办: Milestone D 已完成，下一阶段进入 Milestone E（failure case 归档与复用）
+
+### Update 2026-03-04
+- 变更: 完成 D4，迭代产物新增 `knowledge_sources` 与 `knowledge_provider_decision` 字段，并记录 provider 侧决策元数据（命中数/回退原因）
+- 影响模块: driver/contracts.py, driver/loop.py, knowledge/providers.py, knowledge/mcp_provider.py, tests/test_loop_artifacts.py
+- 验证命令: python3 -m unittest tests/test_loop_artifacts.py tests/test_knowledge_provider.py tests/test_mcp_provider.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（47 tests）
+- 风险/待办: D5 未完成，尚缺“mcp 正常 + mcp 失败回退 + source 可追溯”的成组回归测试
+
+### Update 2026-03-04
+- 变更: 完成 D3，新增 HybridKnowledgeProvider：优先 MCP 命中，MCP 异常或无结果时自动回落 local
+- 影响模块: knowledge/providers.py, tests/test_knowledge_provider.py
+- 验证命令: python3 -m unittest tests/test_knowledge_provider.py tests/test_mcp_provider.py -q; python3 -m unittest discover -s tests -q; python3 -m driver.main run --project-config configs/project.nonui.context7.sample.toml --policy-config configs/policy.default.toml
+- 结果: PASS（47 tests）
+- 风险/待办: D4 未完成，迭代产物尚未写入 knowledge_sources 与 provider 决策细节
+
+### Update 2026-03-04
+- 变更: MCP 配置新增 URL+Headers 模式（对齐 Cursor/Context7 配置），`mcp` 模式优先走 `mcp_server_url`，未配置时回落 `mcp_server_command`
+- 影响模块: knowledge/mcp_provider.py, knowledge/providers.py, driver/contracts.py, driver/main.py, configs/project.nonui.context7.sample.toml, configs/project.nonui.sample.toml, configs/project.helloworld.toml, tests/test_mcp_provider.py, README.md
+- 验证命令: python3 -m unittest tests/test_mcp_provider.py tests/test_knowledge_provider.py tests/test_validate_command.py -q; python3 -m unittest discover -s tests -q; python3 -m driver.main validate --project-config configs/project.nonui.context7.sample.toml --policy-config configs/policy.default.toml
+- 结果: PASS（45 tests；validate OK）
+- 风险/待办: 仍需提供有效 `CONTEXT7_API_KEY` 才能在真实 run 中拉取知识；D3 hybrid 自动回退待实现
+
+### Update 2026-03-04
+- 变更: 补充 Context7 MCP 样例配置，并将 MCP tools/call 参数收敛为 `query` 单字段以兼容 `query-docs` 严格 schema
+- 影响模块: knowledge/mcp_provider.py, configs/project.nonui.context7.sample.toml, configs/project.nonui.sample.toml, configs/project.helloworld.toml, driver/contracts.py, driver/main.py, tests/test_mcp_provider.py, README.md
+- 验证命令: python3 -m unittest tests/test_mcp_provider.py tests/test_knowledge_provider.py tests/test_validate_command.py -q; python3 -m unittest discover -s tests -q; python3 -m driver.main validate --project-config configs/project.nonui.context7.sample.toml --policy-config configs/policy.default.toml
+- 结果: PASS（44 tests；validate OK）
+- 风险/待办: 运行 `mcp` 模式前仍需提供有效 `CONTEXT7_API_KEY`；D3（hybrid 自动回退）待完成
+
+### Update 2026-03-04
+- 变更: 完成 D2，新增 MCP provider 适配层（stdio MCP client + tools/call）并将返回结果映射为结构化 KnowledgeItem
+- 影响模块: knowledge/mcp_provider.py, knowledge/providers.py, driver/contracts.py, driver/loop.py, driver/main.py, configs/project.nonui.sample.toml, configs/project.helloworld.toml, tests/test_mcp_provider.py, tests/test_knowledge_provider.py, docs/plans/2026-03-04-milestone-d2-mcp-provider.md
+- 验证命令: python3 -m unittest tests/test_mcp_provider.py tests/test_knowledge_provider.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（43 tests）
+- 风险/待办: D3 未完成，hybrid 模式尚未实现 MCP 失败自动回落 local；需在项目配置中填入可用的 Context7/Cangjie MCP 启动命令与 tool 名称
+
+### Update 2026-03-04
+- 变更: 完成 D1，新增 KnowledgeProvider 抽象与 provider 配置项（local|mcp|hybrid），loop 通过 provider 接口检索知识并向策略上下文暴露 provider 信息
+- 影响模块: knowledge/providers.py, knowledge/retriever.py, driver/contracts.py, driver/loop.py, driver/main.py, configs/project.nonui.sample.toml, configs/project.helloworld.toml, tests/test_knowledge_provider.py, tests/test_loop_contracts.py, tests/test_validate_command.py, docs/plans/2026-03-04-milestone-d1-knowledge-provider.md
+- 验证命令: python3 -m unittest tests/test_knowledge_provider.py tests/test_loop_contracts.py tests/test_validate_command.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS（41 tests）
+- 风险/待办: D2/D3 未实现，mcp/hybrid 当前仅完成配置与抽象接入，实际检索仍走 local provider
 
 ### Update 2026-03-04
 - 变更: 将后续执行清单从 A/B/C 完结阶段切换为 D/E/F/G（MCP -> case memory -> real LLM -> multi-model）

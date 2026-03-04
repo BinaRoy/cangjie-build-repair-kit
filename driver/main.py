@@ -19,6 +19,7 @@ from driver.loop import run_loop
 from driver.packaging import export_product_bundle
 from driver.reporting import generate_run_report
 from driver.session_snapshot import write_snapshot_file
+from driver.weekly_report import generate_weekly_comparison_report
 
 
 def _load_toml(path: Path) -> dict:
@@ -271,6 +272,24 @@ def _init_command(template: str, output_dir: str, project_name: str, workdir: st
             'verify_command = "hvigorw.bat --mode module -p module=entry -p product=default clean assembleHap --no-daemon"\n'
             'test_command = "hvigorw.bat --mode module -p module=entry -p product=default test --no-daemon"\n'
             "command_timeout_sec = 1200\n"
+            'knowledge_provider = "local"\n'
+            'mcp_server_command = ""\n'
+            "mcp_server_args = []\n"
+            'mcp_server_url = ""\n'
+            "mcp_headers = []\n"
+            'mcp_tool_name = "query-docs"\n'
+            "mcp_timeout_sec = 15\n"
+            "mcp_max_items = 5\n"
+            'repair_strategy = "rule_based"\n'
+            'llm_api_url = ""\n'
+            'llm_api_key = ""\n'
+            'llm_model = ""\n'
+            'llm_model_secondary = ""\n'
+            'llm_route_rule = "error_type_or_complexity"\n'
+            'llm_secondary_categories = ["syntax", "generic", "type"]\n'
+            "llm_complexity_threshold = 220\n"
+            "llm_timeout_sec = 30\n"
+            "llm_temperature = 0.0\n"
             'editable_paths = ["entry/src/main/cangjie", "entry/cjpm.toml"]\n'
             'readonly_paths = ["AppScope", ".hvigor", "oh_modules"]\n'
             'artifact_checks = ["entry/build/default/outputs/default/entry-default-unsigned.hap"]\n'
@@ -284,6 +303,24 @@ def _init_command(template: str, output_dir: str, project_name: str, workdir: st
             'verify_command = "cjpm build"\n'
             'test_command = "cjpm test"\n'
             "command_timeout_sec = 600\n"
+            'knowledge_provider = "local"\n'
+            'mcp_server_command = ""\n'
+            "mcp_server_args = []\n"
+            'mcp_server_url = ""\n'
+            "mcp_headers = []\n"
+            'mcp_tool_name = "query-docs"\n'
+            "mcp_timeout_sec = 15\n"
+            "mcp_max_items = 5\n"
+            'repair_strategy = "rule_based"\n'
+            'llm_api_url = ""\n'
+            'llm_api_key = ""\n'
+            'llm_model = ""\n'
+            'llm_model_secondary = ""\n'
+            'llm_route_rule = "error_type_or_complexity"\n'
+            'llm_secondary_categories = ["syntax", "generic", "type"]\n'
+            "llm_complexity_threshold = 220\n"
+            "llm_timeout_sec = 30\n"
+            "llm_temperature = 0.0\n"
             'editable_paths = ["src", "cjpm.toml"]\n'
             'readonly_paths = ["target", ".git", "build"]\n'
             "artifact_checks = []\n"
@@ -306,6 +343,7 @@ def _init_command(template: str, output_dir: str, project_name: str, workdir: st
         "require_knowledge_source_evidence = true\n"
         "require_non_scaffold_patch = true\n"
         "min_changed_lines_when_patch_applied = 1\n"
+        "similar_case_top_k = 3\n"
         'scaffold_markers = ["TODO", "FIXME", "NotImplemented", "stub", "placeholder"]\n'
     )
 
@@ -348,6 +386,16 @@ def _doc_update_command(
     return 0
 
 
+def _weekly_report_command(runs_dir: str, output: str, days: int) -> int:
+    out = generate_weekly_comparison_report(
+        runs_dir=Path(runs_dir).resolve(),
+        output_path=Path(output).resolve(),
+        days=days,
+    )
+    print(f"weekly report generated: {out.as_posix()}")
+    return 0
+
+
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Cangjie build-repair tool")
     sub = parser.add_subparsers(dest="command")
@@ -385,6 +433,11 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     validate.add_argument("--project-config", required=True)
     validate.add_argument("--policy-config", required=True)
 
+    weekly = sub.add_parser("weekly-report", help="generate weekly model comparison report")
+    weekly.add_argument("--runs-dir", default="runs")
+    weekly.add_argument("--output", default="docs/weekly_model_report.md")
+    weekly.add_argument("--days", type=int, default=7)
+
     # Legacy mode compatibility: supports old direct run flags.
     parser.add_argument("--project-config")
     parser.add_argument("--policy-config")
@@ -416,6 +469,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     if args.command == "validate":
         return _validate_command(args.project_config, args.policy_config)
+    if args.command == "weekly-report":
+        return _weekly_report_command(args.runs_dir, args.output, args.days)
     if args.command == "run":
         return _run_command(args.project_config, args.policy_config, args.run_id)
 
@@ -423,7 +478,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.project_config and args.policy_config:
         return _run_command(args.project_config, args.policy_config, args.run_id)
     raise SystemExit(
-        "Use `run`, `validate`, `init`, `export`, `snapshot` or `doc-update` subcommand. "
+        "Use `run`, `validate`, `init`, `export`, `snapshot`, `doc-update` or `weekly-report` subcommand. "
         "Example: cangjie-repair run --project-config ..."
     )
 

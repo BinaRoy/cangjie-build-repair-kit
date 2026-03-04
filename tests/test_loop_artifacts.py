@@ -50,16 +50,27 @@ class LoopArtifactTests(unittest.TestCase):
             run_dir = base_dir / "runs" / "loop-a5"
             error_path = run_dir / "error_iter_1.json"
             plan_path = run_dir / "patch_plan_iter_1.json"
+            iter_path = run_dir / "iter_1.json"
 
             self.assertTrue(error_path.exists())
             self.assertTrue(plan_path.exists())
+            self.assertTrue(iter_path.exists())
 
             error_payload = json.loads(error_path.read_text(encoding="utf-8"))
             plan_payload = json.loads(plan_path.read_text(encoding="utf-8"))
+            iter_payload = json.loads(iter_path.read_text(encoding="utf-8"))
             self.assertIn("fingerprint", error_payload)
             self.assertIn("category", error_payload)
             self.assertIn("can_apply", plan_payload)
             self.assertIn("diff_summary", plan_payload)
+            self.assertIn("knowledge_sources", iter_payload)
+            self.assertIn("knowledge_provider_decision", iter_payload)
+            self.assertIn("model_route_decision", iter_payload)
+            self.assertIsInstance(iter_payload["knowledge_sources"], list)
+            self.assertIsInstance(iter_payload["knowledge_provider_decision"], dict)
+            self.assertIsInstance(iter_payload["model_route_decision"], dict)
+            self.assertIn("configured_mode", iter_payload["knowledge_provider_decision"])
+            self.assertIn("provider_name", iter_payload["knowledge_provider_decision"])
 
 
 if __name__ == "__main__":

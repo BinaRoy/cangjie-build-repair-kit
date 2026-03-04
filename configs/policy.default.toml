@@ -14,4 +14,5 @@ min_knowledge_hits = 1
 require_knowledge_source_evidence = true
 require_non_scaffold_patch = true
 min_changed_lines_when_patch_applied = 1
+similar_case_top_k = 3
 scaffold_markers = ["TODO", "FIXME", "NotImplemented", "stub", "placeholder"]

@@ -7,7 +7,7 @@ from typing import Any
 from driver.contracts import ErrorBlock, KnowledgeItem
 
 
-def retrieve_knowledge(base_dir: Path, error: ErrorBlock) -> list[KnowledgeItem]:
+def retrieve_local_knowledge(base_dir: Path, error: ErrorBlock) -> list[KnowledgeItem]:
     hits: list[KnowledgeItem] = []
     patterns = _load_error_patterns(base_dir / "knowledge" / "error_patterns.yaml")
     content = (error.headline + "\n" + error.excerpt).lower()
@@ -45,6 +45,11 @@ def retrieve_knowledge(base_dir: Path, error: ErrorBlock) -> list[KnowledgeItem]
         uniq.append(h)
         seen.add(key)
     return uniq[:12]
+
+
+def retrieve_knowledge(base_dir: Path, error: ErrorBlock) -> list[KnowledgeItem]:
+    # Backward-compatible entrypoint used by older call sites/tests.
+    return retrieve_local_knowledge(base_dir, error)
 
 
 def _retrieve_from_external_toolchain(base_dir: Path, error: ErrorBlock) -> list[KnowledgeItem]:

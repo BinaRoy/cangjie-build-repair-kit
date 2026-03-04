@@ -14,6 +14,8 @@ class LLMStrategyInput:
     iteration: int
     run_id: str
     project_name: str
+    knowledge_sources: list[str] = field(default_factory=list)
+    similar_cases: list[dict[str, Any]] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -39,6 +41,10 @@ class LLMStrategy(RepairStrategy):
         payload = LLMStrategyInput(
             error=error,
             knowledge_hits=list(data.get("knowledge_hits", [])),
+            knowledge_sources=[str(x) for x in list(data.get("knowledge_sources", []))],
+            similar_cases=[
+                dict(x) for x in list(data.get("similar_cases", [])) if isinstance(x, dict)
+            ],
             iteration=int(data.get("iteration", 0)),
             run_id=str(data.get("run_id", "")),
             project_name=str(data.get("project_name", "")),

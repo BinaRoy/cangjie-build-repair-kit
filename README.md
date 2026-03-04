@@ -28,7 +28,10 @@ Core boundaries:
 - Patch execution: `repair/patcher.py` (dry-run, rollback on failure, path/line limits)
 - Strategy interface: `repair/strategies/base.py`
 - Rule strategy: `repair/strategies/rule_based.py`
-- LLM protocol and mock: `repair/strategies/llm.py`, `repair/strategies/mock_llm.py`
+- LLM protocol and providers: `repair/strategies/llm.py`, `repair/strategies/real_llm.py`, `repair/strategies/multi_llm.py`
+- Knowledge provider layer: `knowledge/providers.py`, `knowledge/mcp_provider.py`
+- Failure case memory: `driver/failure_cases.py`
+- Weekly model report: `driver/weekly_report.py`
 
 ### 2.2 Auditable outputs
 
@@ -46,10 +49,10 @@ These are structured outputs (fixed fields in JSON/Markdown), not only raw logs.
 
 ### 2.3 Current verification baseline
 
-At commit `d12680d`:
+At current working baseline:
 
 - Test command: `python3 -m unittest discover -s tests -q`
-- Latest result: `Ran 37 tests ... OK`
+- Latest result: `Ran 73 tests ... OK`
 
 So the current version is already usable as a runnable, verifiable, and traceable repair framework.
 
@@ -125,6 +128,42 @@ python3 -m driver.main run --project-config ./my-configs/project.myproj.toml --p
 ```
 
 5. Check `runs/<run_id>/summary.json` and `report.md` to confirm success, failure, or safe stop.
+
+### 4.2 Context7 MCP configuration example
+
+Use the provided sample config:
+
+`configs/project.nonui.context7.sample.toml`
+
+Key fields (URL mode, aligned with Cursor MCP config):
+
+- `knowledge_provider = "mcp"`
+- `mcp_server_url = "https://mcp.context7.com/mcp"`
+- `mcp_headers = ["CONTEXT7_API_KEY=${CONTEXT7_API_KEY}"]`
+- `mcp_tool_name = "query-docs"`
+
+Before running, export your API key:
+
+```bash
+export CONTEXT7_API_KEY="<your-context7-api-key>"
+```
+
+### 4.3 Multi-model routing and weekly report
+
+Enable multi-model routing in project config:
+
+- `repair_strategy = "multi_llm"`
+- `llm_model = "<primary-model>"`
+- `llm_model_secondary = "<secondary-model>"`
+- `llm_route_rule = "error_type_or_complexity"`
+- `llm_secondary_categories = ["syntax", "generic", "type"]`
+- `llm_complexity_threshold = 220`
+
+Generate weekly comparison report:
+
+```bash
+python3 -m driver.main weekly-report --runs-dir runs --output docs/weekly_model_report.md --days 7
+```
 
 ---
 
