@@ -1,97 +1,164 @@
-﻿# Cangjie Build-Repair Template (MVP)
+# Cangjie Build-Repair Kit: Project Overview and Progress
 
-This is a minimal, configurable build -> diagnose -> repair-plan -> rebuild workflow.
+## 1. What problem this project solves
 
-## What it does now
-- Runs project verify command through adapter.
-- Supports dual-gate verification: `verify_command` (build) then `test_command` (test).
-- Extracts root cause from logs.
-- Retrieves lightweight Cangjie knowledge snippets.
-- Produces structured per-iteration records under `runs/<run_id>/`.
-- Enforces policy constraints for future repair steps.
-- Supports constrained patch execution (`replace_once`) behind policy flag.
-- Can require post-patch verify to pass before continuing.
-- Runs preflight checks before loop (toolchain bootstrap and `cjpm --help`).
-- Preflight failure writes structured remediation hints to `runs/<run_id>/preflight.json`.
-- Enforces knowledge-evidence on failures (must have local source-backed hits).
-- Enforces non-scaffold patch policy (blocks placeholder-only changes).
+In Cangjie projects, using an LLM or an agent to write code is usually not the hard part. The real time cost is debugging and verification after code changes.
 
-## What it does not do yet
-- No LLM call is wired in this MVP.
-- No automatic source patch is applied by default.
+The repeated loop is simple: run build, read errors, edit code, run build again. But across different projects (UI / non-UI), commands, directories, and constraints are different. This makes the process hard to reuse and hard to audit. Also, fully free-form AI debugging is often too divergent and loses context.  
+So this project turns that loop into a reusable engineering workflow:
 
-## Quick start
-```powershell
-cd <this-repo>
-python -m pip install -e .
-cangjie-repair run --project-config configs/project.helloworld.toml --policy-config configs/policy.default.toml
+`Build -> Diagnose -> Plan -> Patch -> Verify -> Record`
+
+Core boundaries:
+
+- Project differences are handled by config (commands, workdir, editable paths, artifact checks).
+- Strategy and execution are separated (strategy only proposes a plan; PatchApplier applies changes).
+- Every iteration produces structured artifacts for troubleshooting and regression.
+
+---
+
+## 2. Current progress (already implemented)
+
+### 2.1 Main flow and modules
+
+- Main loop: `driver/loop.py`
+- Build adapters: `adapters/cjpm_adapter.py`, `adapters/hvigor_adapter.py`
+- Unified verification: `driver/verifier.py` (build/test/artifact)
+- Error parsing: `repair/error_parser.py` (with stable fingerprint)
+- Patch execution: `repair/patcher.py` (dry-run, rollback on failure, path/line limits)
+- Strategy interface: `repair/strategies/base.py`
+- Rule strategy: `repair/strategies/rule_based.py`
+- LLM protocol and mock: `repair/strategies/llm.py`, `repair/strategies/mock_llm.py`
+
+### 2.2 Auditable outputs
+
+Each run creates files under `runs/<run_id>/`:
+
+- `error_iter_<n>.json`
+- `patch_plan_iter_<n>.json`
+- `iter_<n>.json`
+- `verify_iter_<n>.log`
+- `patch_iter_<n>.diff`
+- `summary.json`
+- `report.md`
+
+These are structured outputs (fixed fields in JSON/Markdown), not only raw logs. This makes search, comparison, and regression tracking easier.
+
+### 2.3 Current verification baseline
+
+At commit `d12680d`:
+
+- Test command: `python3 -m unittest discover -s tests -q`
+- Latest result: `Ran 37 tests ... OK`
+
+So the current version is already usable as a runnable, verifiable, and traceable repair framework.
+
+---
+
+## 3. Next plan (adjusted to current conditions)
+
+Since usable MCP options are already available, the order is:
+MCP first, then real LLM, then multi-model expansion.
+
+### Phase 1: Integrate MCP first (3-5 days)
+
+Goals:
+
+- Implement provider mode in `knowledge`: `local | mcp | hybrid`.
+- Connect available MCP and complete the chain: error context -> knowledge retrieval -> structured output.
+- Keep local fallback to avoid MCP instability breaking the run.
+
+Delivery criteria:
+
+- The same error can return traceable sources in both local and mcp modes (`source` is checkable).
+- If MCP is unavailable, the run automatically falls back to local mode and continues.
+
+### Phase 2: Integrate a real LLM (1-2 weeks)
+
+Goals:
+
+- Replace `MockLLMStrategy` with a real model integration.
+- Use MCP/local retrieval results as default input to reduce unsupported edits.
+- Keep the rule: model outputs `PatchPlan` only; it cannot write files directly.
+
+Delivery criteria:
+
+- On at least one non-UI sample where rule strategy cannot fix the issue, LLM strategy provides an executable patch plan.
+- Audit artifacts are fully persisted (error / patch_plan / diff / summary).
+
+### Phase 3: Multi-model expansion (1 week)
+
+Goals:
+
+- Support model routing in strategy layer (by error type or complexity).
+- Keep routing rules minimal; no heavy orchestration.
+
+Delivery criteria:
+
+- At least two model providers can be configured and switched.
+- The same input can reproduce routing decisions and recorded outputs.
+
+---
+
+## 4. How to try it on a project (practical steps)
+
+### 4.1 First-time setup for a new project
+
+1. Generate config:
+
+```bash
+python3 -m driver.main init --template non_ui --output-dir ./my-configs --project-name myproj --workdir /path/to/project
 ```
 
-Non-UI sample:
-```powershell
-cangjie-repair run --project-config configs/project.nonui.sample.toml --policy-config configs/policy.default.toml
+2. Update 4 key fields in config: `verify_command`, `test_command`, `editable_paths`, `artifact_checks`.
+
+3. Validate command/path availability:
+
+```bash
+python3 -m driver.main validate --project-config ./my-configs/project.myproj.toml --policy-config ./my-configs/policy.default.toml
 ```
 
-Generate reusable config templates:
-```powershell
-cangjie-repair init --template ui --output-dir .\my-configs --project-name my-ui --workdir .
-cangjie-repair init --template non_ui --output-dir .\my-configs --project-name my-lib --workdir .
+4. Run one full loop:
+
+```bash
+python3 -m driver.main run --project-config ./my-configs/project.myproj.toml --policy-config ./my-configs/policy.default.toml
 ```
 
-Validate config schema and command/path availability:
-```powershell
-cangjie-repair validate --project-config configs/project.helloworld.toml --policy-config configs/policy.default.toml
-```
+5. Check `runs/<run_id>/summary.json` and `report.md` to confirm success, failure, or safe stop.
 
-Dual-gate config example:
-```toml
-verify_command = "cjpm build"
-test_command = "cjpm test"
-```
+---
 
-Export product bundle (filtered):
-```powershell
-cangjie-repair export --output-dir .\dist\product_bundle --force
-```
+## 5. Application scenarios
 
-Generate session handoff snapshot:
-```powershell
-cangjie-repair snapshot --output .\docs\session_snapshot.md --source-doc .\docs\development_assessment_and_followup.md
-```
+1. New project bootstrap  
+   Use one standard workflow instead of project-specific debugging scripts.
 
-Append one development update entry:
-```powershell
-cangjie-repair doc-update --date 2026-03-03 --change "..." --modules "driver/main.py,tests/test_x.py" --verify-command "python3 -m unittest discover -s tests -q" --result "PASS" --risk "..."
-```
+2. Team regression / CI support  
+   Generate structured diagnosis records for failed builds for review and tracking.
 
-Outputs:
-- Iteration logs: `runs/<run_id>/iter_*.json`
-- Raw verify logs: `runs/<run_id>/verify_iter_*.log`
-- Summary: `runs/<run_id>/summary.json`
-- Markdown report: `runs/<run_id>/report.md`
+3. Execution base for LLM repair systems  
+   Keep model responsibility as "propose plan", and keep file writes + safety checks in execution layer.
 
-## Extension points
-- `repair/planner.py`: swap with LLM/multi-agent planner.
-- `repair/patcher.py`: apply patch plans with strict path limits.
-- `knowledge/retriever.py`: replace local lookup with MCP-backed retrieval.
+---
 
-## Validation
-- Portability validation record: `docs/portability_validation_2026-03-02.md`
+## 6. Expected value and evaluation
 
-## Knowledge routing
-- Toolchain repo routing: `knowledge/cangjie/toolchain/cangjie_tools_lookup_rules.md`
-- Core repos routing (`compiler/runtime/docs`): `knowledge/cangjie/toolchain/cangjie_core_lookup_rules.md`
+The goal is not "highest automation". The goal is "workflow-based debugging is more stable and effective than blind debugging."
 
-## Reuse on any project (no LLM)
-1. Install: `python -m pip install -e .`
-2. Generate config: `cangjie-repair init --template <ui|non_ui> --output-dir <dir> --project-name <name> --workdir <target-project-root>`
-3. Edit generated `project.<name>.toml`:
-   - set `verify_command` to your project build command
-   - set `test_command` to your project test command (optional but recommended)
-   - set `editable_paths` to directories allowed to change
-4. Run: `cangjie-repair run --project-config <project.toml> --policy-config <policy.toml>`
+### 6.1 Expected user experience
 
-Notes:
-- Config supports `${ENV_VAR}` placeholders.
-- Relative `workdir` is resolved against the config file location.
-- On Windows, adapters auto-inject Cangjie toolchain runtime paths when available.
+Users should feel three concrete improvements:
+
+1. Better failure visibility: each iteration records error, plan, patch, and outcome.
+2. Controlled changes: even with LLM integration, files are not changed arbitrarily.
+3. Reproducible debugging: same input can be rerun and reviewed by the team.
+
+### 6.2 Evaluation metrics
+
+1. Success rate: ratio of `final_status=success` in sample set.
+2. Average iterations: average number of iterations for successful cases.
+3. Average duration: total time from start to stop.
+4. Safety incidents: out-of-scope edits, bypassing PatchApplier, untraceable changes (target: 0).
+5. Migration cost: whether new project onboarding needs framework code changes beyond config (target: near 0).
+
+If these metrics are better than free-form LLM/agent debugging for two continuous weeks, this framework is practically validated and ready for multi-model extension.
