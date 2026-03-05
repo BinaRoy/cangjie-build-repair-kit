@@ -52,7 +52,7 @@ These are structured outputs (fixed fields in JSON/Markdown), not only raw logs.
 At current working baseline:
 
 - Test command: `python3 -m unittest discover -s tests -q`
-- Latest result: `Ran 73 tests ... OK`
+- Latest result: `Ran 75 tests ... OK`
 
 So the current version is already usable as a runnable, verifiable, and traceable repair framework.
 
@@ -107,6 +107,38 @@ Delivery criteria:
 
 ### 4.1 First-time setup for a new project
 
+Recommended path (faster and safer): use bootstrap command.
+
+1. Bootstrap configs and follow guide:
+
+```bash
+python3 -m driver.main bootstrap-nonui --project-root /path/to/project --output-dir ./my-configs --project-name myproj
+```
+
+This generates:
+
+- `project.myproj.toml`
+- `policy.default.toml`
+- `FOLLOW_GUIDE.md` (step-by-step commands for validate/run/inspect)
+
+2. If the project does not contain `cjpm.toml`, fill `verify_command` manually in `project.myproj.toml`.
+
+3. Validate command/path availability:
+
+```bash
+python3 -m driver.main validate --project-config ./my-configs/project.myproj.toml --policy-config ./my-configs/policy.default.toml
+```
+
+4. Run one full loop:
+
+```bash
+python3 -m driver.main run --project-config ./my-configs/project.myproj.toml --policy-config ./my-configs/policy.default.toml
+```
+
+5. Check `runs/<run_id>/summary.json` and `report.md` to confirm success, failure, or safe stop.
+
+Alternative (manual template init):
+
 1. Generate config:
 
 ```bash
@@ -128,6 +160,20 @@ python3 -m driver.main run --project-config ./my-configs/project.myproj.toml --p
 ```
 
 5. Check `runs/<run_id>/summary.json` and `report.md` to confirm success, failure, or safe stop.
+
+### 4.4 What an agent can auto-configure
+
+With this repo available in the target environment, an agent can usually auto-complete:
+
+- config scaffold generation (`bootstrap-nonui` / `init`)
+- path auto-detection for common non-UI layouts (`src`, `source`, `lib`, `cjpm.toml`)
+- validation and loop execution commands
+
+Still requires project-specific human-provided info:
+
+- real build command (`verify_command`) when project tooling is custom
+- external secrets (`CONTEXT7_API_KEY`, LLM API key)
+- network/runtime prerequisites not inferable from repo content
 
 ### 4.2 Context7 MCP configuration example
 

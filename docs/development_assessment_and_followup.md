@@ -457,3 +457,10 @@
 - 验证命令: python3 -m unittest discover -s tests -q
 - 结果: PASS
 - 风险/待办: Milestone C 已完成；后续可进入分支收尾与整体验收
+
+### Update 2026-03-05
+- 变更: 新增 bootstrap-nonui 新项目引导命令与 FOLLOW_GUIDE，降低新环境接入成本并明确可自动/需人工字段边界
+- 影响模块: driver/main.py, tests/test_bootstrap_nonui.py, README.md
+- 验证命令: python3 -m unittest tests/test_bootstrap_nonui.py -q; python3 -m unittest discover -s tests -q
+- 结果: PASS
+- 风险/待办: 自定义工程仍需人工确认 verify_command 与密钥环境变量

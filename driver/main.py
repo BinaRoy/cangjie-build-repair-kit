@@ -386,6 +386,123 @@ def _doc_update_command(
     return 0
 
 
+def _bootstrap_non_ui(project_root: str, output_dir: str, project_name: str, force: bool) -> int:
+    root = Path(project_root).resolve()
+    if not root.exists() or not root.is_dir():
+        print(f"bootstrap-nonui: FAIL project root not found: {root.as_posix()}")
+        return 1
+
+    rc = _init_command("non_ui", output_dir, project_name, root.as_posix(), force)
+    if rc != 0:
+        return rc
+
+    out = Path(output_dir).resolve()
+    project_path = out / f"project.{project_name}.toml"
+    policy_path = out / "policy.default.toml"
+    guide_path = out / "FOLLOW_GUIDE.md"
+
+    project_cfg = _load_toml(project_path)
+    detected_editables = [p for p in ["src", "source", "lib", "cjpm.toml"] if (root / p).exists()]
+    if detected_editables:
+        project_cfg["editable_paths"] = detected_editables
+    else:
+        project_cfg["editable_paths"] = ["src", "cjpm.toml"]
+
+    if not (root / "cjpm.toml").exists():
+        project_cfg["verify_command"] = "<fill_verify_command>"
+        project_cfg["test_command"] = ""
+
+    _write_simple_toml(project_path, project_cfg)
+
+    guide_lines = [
+        "# Non-UI Project Follow Guide",
+        "",
+        "## 1) Check generated files",
+        f"- Project config: `{project_path.as_posix()}`",
+        f"- Policy config: `{policy_path.as_posix()}`",
+        "",
+        "## 2) Fill project-specific fields (required)",
+        "- `verify_command` (build command)",
+        "- `test_command` (optional but recommended)",
+        "- `editable_paths` (already auto-detected, verify before run)",
+        "",
+        "## 3) Validate",
+        f"`python3 -m driver.main validate --project-config {project_path.as_posix()} --policy-config {policy_path.as_posix()}`",
+        "",
+        "## 4) Run repair loop",
+        f"`python3 -m driver.main run --project-config {project_path.as_posix()} --policy-config {policy_path.as_posix()}`",
+        "",
+        "## 5) Inspect outputs",
+        "- `runs/<run_id>/summary.json`",
+        "- `runs/<run_id>/report.md`",
+        "- `runs/<run_id>/iter_*.json`",
+    ]
+    guide_path.write_text("\n".join(guide_lines) + "\n", encoding="utf-8")
+    print(f"bootstrap guide generated: {guide_path.as_posix()}")
+    return 0
+
+
+def _write_simple_toml(path: Path, data: dict) -> None:
+    lines: list[str] = []
+    order = [
+        "project_name",
+        "project_type",
+        "workdir",
+        "adapter",
+        "verify_command",
+        "test_command",
+        "command_timeout_sec",
+        "knowledge_provider",
+        "mcp_server_command",
+        "mcp_server_args",
+        "mcp_server_url",
+        "mcp_headers",
+        "mcp_tool_name",
+        "mcp_timeout_sec",
+        "mcp_max_items",
+        "repair_strategy",
+        "llm_api_url",
+        "llm_api_key",
+        "llm_model",
+        "llm_model_secondary",
+        "llm_route_rule",
+        "llm_secondary_categories",
+        "llm_complexity_threshold",
+        "llm_timeout_sec",
+        "llm_temperature",
+        "editable_paths",
+        "readonly_paths",
+        "artifact_checks",
+    ]
+    for key in order:
+        if key in data:
+            lines.append(f"{key} = {_toml_serialize_value(data[key])}")
+    for key, value in data.items():
+        if key not in order:
+            lines.append(f"{key} = {_toml_serialize_value(value)}")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _toml_serialize_value(value):
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        return str(value)
+    if isinstance(value, list):
+        out = []
+        for item in value:
+            if isinstance(item, str):
+                out.append(f'"{item}"')
+            elif isinstance(item, bool):
+                out.append("true" if item else "false")
+            else:
+                out.append(str(item))
+        return "[" + ", ".join(out) + "]"
+    return f'"{str(value)}"'
+
+
 def _weekly_report_command(runs_dir: str, output: str, days: int) -> int:
     out = generate_weekly_comparison_report(
         runs_dir=Path(runs_dir).resolve(),
@@ -438,6 +555,12 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     weekly.add_argument("--output", default="docs/weekly_model_report.md")
     weekly.add_argument("--days", type=int, default=7)
 
+    bootstrap = sub.add_parser("bootstrap-nonui", help="bootstrap configs for a new non-ui project")
+    bootstrap.add_argument("--project-root", required=True)
+    bootstrap.add_argument("--output-dir", required=True)
+    bootstrap.add_argument("--project-name", default="sample")
+    bootstrap.add_argument("--force", action="store_true")
+
     # Legacy mode compatibility: supports old direct run flags.
     parser.add_argument("--project-config")
     parser.add_argument("--policy-config")
@@ -471,6 +594,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _validate_command(args.project_config, args.policy_config)
     if args.command == "weekly-report":
         return _weekly_report_command(args.runs_dir, args.output, args.days)
+    if args.command == "bootstrap-nonui":
+        return _bootstrap_non_ui(args.project_root, args.output_dir, args.project_name, args.force)
     if args.command == "run":
         return _run_command(args.project_config, args.policy_config, args.run_id)
 
@@ -478,7 +603,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.project_config and args.policy_config:
         return _run_command(args.project_config, args.policy_config, args.run_id)
     raise SystemExit(
-        "Use `run`, `validate`, `init`, `export`, `snapshot`, `doc-update` or `weekly-report` subcommand. "
+        "Use `run`, `validate`, `init`, `export`, `snapshot`, `doc-update`, `weekly-report` or `bootstrap-nonui` subcommand. "
         "Example: cangjie-repair run --project-config ..."
     )
 
