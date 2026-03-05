@@ -183,8 +183,9 @@ def run_loop(
             knowledge_provider_selection.provider,
             len(knowledge_hits),
         )
+        relax_min_hit_gate = _should_relax_knowledge_hit_gate(active_strategy, error)
         if policy.require_knowledge_lookup_on_failure:
-            if len(knowledge_hits) < policy.min_knowledge_hits:
+            if not relax_min_hit_gate and len(knowledge_hits) < policy.min_knowledge_hits:
                 store.write_patch_plan(i, empty_patch_plan)
                 decision = "stop_no_knowledge_hits"
                 _archive_failure_case(
@@ -449,6 +450,11 @@ def _build_knowledge_provider_decision(
         if isinstance(extra, dict):
             decision.update(extra)
     return decision
+
+
+def _should_relax_knowledge_hit_gate(active_strategy: StrategyProtocol, error: ErrorSchema) -> bool:
+    # Rule-based strategy should still attempt deterministic planning for common parser/compiler failures.
+    return isinstance(active_strategy, RuleBasedStrategy) and error.category in {"syntax", "compile"}
 
 
 def _extract_model_route_decision(strategy: StrategyProtocol) -> dict[str, Any]:

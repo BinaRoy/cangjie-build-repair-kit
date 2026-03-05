@@ -90,6 +90,49 @@ class LoopInjectionTests(unittest.TestCase):
 
             self.assertEqual(calls, ["parser", "strategy", "applier", "verifier"])
 
+    def test_syntax_error_does_not_stop_on_no_knowledge_hits_for_rule_based(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base_dir = Path(tmp)
+            workdir = base_dir / "work"
+            (workdir / "src").mkdir(parents=True)
+            project = ProjectConfig(
+                project_name="x-syntax",
+                project_type="non_ui",
+                workdir=str(workdir),
+                adapter="cjpm",
+                verify_command="cjpm build",
+                editable_paths=["src"],
+                repair_strategy="rule_based",
+            )
+            policy = PolicyConfig(
+                max_iterations=1,
+                allow_apply_patch=False,
+                require_preflight=False,
+                require_knowledge_lookup_on_failure=True,
+                min_knowledge_hits=1,
+            )
+
+            def parser(_: str) -> ErrorSchema:
+                return ErrorSchema(
+                    category="syntax",
+                    file="src/main.cj",
+                    line=1,
+                    message="syntax error",
+                    context="x",
+                    fingerprint="fp-syntax",
+                )
+
+            summary = run_loop(
+                base_dir=base_dir,
+                run_id="inject-knowledge-syntax",
+                project=project,
+                policy=policy,
+                adapter=_FailingAdapter(),
+                parser=parser,
+            )
+
+            self.assertNotEqual(summary.stop_reason, "stop_no_knowledge_hits")
+
 
 if __name__ == "__main__":
     unittest.main()
