@@ -29,12 +29,13 @@ class RuleBasedStrategy(RepairStrategy):
             )
 
         rationale = (
-            "MVP planner is in safe mode and does not auto-edit files yet. "
-            f"Detected family={error.family}, matched knowledge={hit_titles}."
+            "MVP planner is in diagnosis-only safe mode for generic failures and does not auto-edit files. "
+            f"Detected family={error.family}, matched knowledge={hit_titles}. "
+            "To enable auto-repair flow, configure a repair-capable `repair_strategy` and keep `allow_apply_patch=true`."
         )
         return PatchPlan(
             can_apply=False,
             rationale=rationale,
-            diff_summary="No patch generated in MVP safe mode.",
+            diff_summary="No patch generated in diagnosis-only MVP safe mode.",
             actions=[],
         )

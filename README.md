@@ -6,6 +6,7 @@
 - Agent workflow source-of-truth: `docs/agent_issue_pr_workflow.md`
 - Release/build notes: `docs/git_and_release_workflow.md`
 - Issue autopilot entry: `scripts/issue_autopilot.sh`
+- MVP safe-mode behavior and repair-enabling guide: `docs/mvp_safe_mode_and_repairing.md`
 
 ## 1. What problem this project solves
 
