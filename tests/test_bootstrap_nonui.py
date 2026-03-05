@@ -55,6 +55,52 @@ class BootstrapNonUITests(unittest.TestCase):
             text = (out / "project.demo2.toml").read_text(encoding="utf-8")
             self.assertIn('verify_command = "<fill_verify_command>"', text)
 
+    def test_bootstrap_nonui_selects_nested_module_workdir(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_root = root / "repo"
+            module_root = project_root / "modules" / "core"
+            (module_root / "src").mkdir(parents=True)
+            (module_root / "cjpm.toml").write_text('name = "core"\n', encoding="utf-8")
+            out = root / "out"
+
+            rc = _bootstrap_non_ui(
+                project_root=project_root.as_posix(),
+                output_dir=out.as_posix(),
+                project_name="nested",
+                force=True,
+            )
+
+            self.assertEqual(rc, 0)
+            text = (out / "project.nested.toml").read_text(encoding="utf-8")
+            self.assertIn(f'workdir = "{module_root.as_posix()}"', text)
+            self.assertIn('editable_paths = ["src", "cjpm.toml"]', text)
+            self.assertNotIn('verify_command = "<fill_verify_command>"', text)
+
+    def test_bootstrap_nonui_warns_when_multiple_modules_detected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_root = root / "repo"
+            module_a = project_root / "module-a"
+            module_b = project_root / "module-b"
+            (module_a / "src").mkdir(parents=True)
+            (module_b / "src").mkdir(parents=True)
+            (module_a / "cjpm.toml").write_text('name = "a"\n', encoding="utf-8")
+            (module_b / "cjpm.toml").write_text('name = "b"\n', encoding="utf-8")
+            out = root / "out"
+
+            rc = _bootstrap_non_ui(
+                project_root=project_root.as_posix(),
+                output_dir=out.as_posix(),
+                project_name="multi",
+                force=True,
+            )
+
+            self.assertEqual(rc, 0)
+            guide_text = (out / "FOLLOW_GUIDE.md").read_text(encoding="utf-8")
+            self.assertIn("multiple", guide_text.lower())
+            self.assertIn("cjpm.toml", guide_text)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -433,13 +433,17 @@ def _bootstrap_non_ui(project_root: str, output_dir: str, project_name: str, for
     guide_path = out / "FOLLOW_GUIDE.md"
 
     project_cfg = _load_toml(project_path)
-    detected_editables = [p for p in ["src", "source", "lib", "cjpm.toml"] if (root / p).exists()]
+    module_candidates = _detect_non_ui_module_roots(root)
+    selected_root = module_candidates[0] if module_candidates else root
+    project_cfg["workdir"] = selected_root.as_posix()
+
+    detected_editables = [p for p in ["src", "source", "lib", "cjpm.toml"] if (selected_root / p).exists()]
     if detected_editables:
         project_cfg["editable_paths"] = detected_editables
     else:
         project_cfg["editable_paths"] = ["src", "cjpm.toml"]
 
-    if not (root / "cjpm.toml").exists():
+    if not (selected_root / "cjpm.toml").exists():
         project_cfg["verify_command"] = "<fill_verify_command>"
         project_cfg["test_command"] = ""
 
@@ -456,21 +460,45 @@ def _bootstrap_non_ui(project_root: str, output_dir: str, project_name: str, for
         "- `verify_command` (build command)",
         "- `test_command` (optional but recommended)",
         "- `editable_paths` (already auto-detected, verify before run)",
-        "",
-        "## 3) Validate",
-        f"`python3 -m driver.main validate --project-config {project_path.as_posix()} --policy-config {policy_path.as_posix()}`",
-        "",
-        "## 4) Run repair loop",
-        f"`python3 -m driver.main run --project-config {project_path.as_posix()} --policy-config {policy_path.as_posix()}`",
-        "",
-        "## 5) Inspect outputs",
-        "- `runs/<run_id>/summary.json`",
-        "- `runs/<run_id>/report.md`",
-        "- `runs/<run_id>/iter_*.json`",
     ]
+    if len(module_candidates) > 1:
+        guide_lines.extend(
+            [
+                "",
+                "## Module Detection Warning",
+                f"- Multiple `cjpm.toml` candidates detected: {len(module_candidates)}",
+                f"- Selected workdir: `{selected_root.as_posix()}`",
+                f"- Candidates: `{', '.join(p.as_posix() for p in module_candidates)}`",
+            ]
+        )
+    guide_lines.extend(
+        [
+            "",
+            "## 3) Validate",
+            f"`python3 -m driver.main validate --project-config {project_path.as_posix()} --policy-config {policy_path.as_posix()}`",
+            "",
+            "## 4) Run repair loop",
+            f"`python3 -m driver.main run --project-config {project_path.as_posix()} --policy-config {policy_path.as_posix()}`",
+            "",
+            "## 5) Inspect outputs",
+            "- `runs/<run_id>/summary.json`",
+            "- `runs/<run_id>/report.md`",
+            "- `runs/<run_id>/iter_*.json`",
+        ]
+    )
     guide_path.write_text("\n".join(guide_lines) + "\n", encoding="utf-8")
     print(f"bootstrap guide generated: {guide_path.as_posix()}")
     return 0
+
+
+def _detect_non_ui_module_roots(root: Path) -> list[Path]:
+    candidates: set[Path] = set()
+    ignored_parts = {".git", "target", "build", ".idea", ".vscode", "__pycache__"}
+    for manifest in root.rglob("cjpm.toml"):
+        if any(part in ignored_parts for part in manifest.parts):
+            continue
+        candidates.add(manifest.parent.resolve())
+    return sorted(candidates, key=lambda p: (len(p.relative_to(root).parts), p.as_posix()))
 
 
 def _write_simple_toml(path: Path, data: dict) -> None:
