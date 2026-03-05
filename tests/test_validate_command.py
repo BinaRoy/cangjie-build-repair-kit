@@ -12,6 +12,15 @@ class ValidateCommandTests(unittest.TestCase):
     def test_extract_required_commands_for_wrapped_command(self) -> None:
         self.assertEqual(_extract_required_commands("cmd /c run_hvigor.cmd"), ["cmd", "run_hvigor.cmd"])
 
+    def test_extract_required_commands_for_shell_chain(self) -> None:
+        self.assertEqual(_extract_required_commands("cd runtime && cjpm test"), ["cjpm"])
+
+    def test_extract_required_commands_for_bash_lc_wrapper(self) -> None:
+        self.assertEqual(
+            _extract_required_commands("bash -lc 'cd runtime && cjpm test'"),
+            ["bash", "cjpm"],
+        )
+
     def test_validate_command_passes_for_valid_config(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -32,6 +41,34 @@ class ValidateCommandTests(unittest.TestCase):
                         "command_timeout_sec = 60",
                         'editable_paths = ["src"]',
                         'readonly_paths = ["readonly"]',
+                        "artifact_checks = []",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            policy_cfg.write_text("", encoding="utf-8")
+
+            self.assertEqual(_validate_command(str(project_cfg), str(policy_cfg)), 0)
+
+    def test_validate_command_accepts_shell_style_verify_command(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            workdir = root / "work"
+            (workdir / "src").mkdir(parents=True)
+
+            project_cfg = root / "project.toml"
+            policy_cfg = root / "policy.toml"
+            project_cfg.write_text(
+                "\n".join(
+                    [
+                        'project_name = "shell-style-project"',
+                        'project_type = "non_ui"',
+                        f'workdir = "{workdir.as_posix()}"',
+                        'adapter = "cjpm"',
+                        f'verify_command = "bash -lc \'cd src && {sys.executable} --version\'"',
+                        "command_timeout_sec = 60",
+                        'editable_paths = ["src"]',
+                        "readonly_paths = []",
                         "artifact_checks = []",
                     ]
                 ),
