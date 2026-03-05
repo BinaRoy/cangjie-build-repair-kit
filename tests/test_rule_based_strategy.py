@@ -42,6 +42,8 @@ class RuleBasedStrategyTests(unittest.TestCase):
         self.assertIn("k1", plan.rationale)
         self.assertIn("diagnosis-only", plan.rationale.lower())
         self.assertIn("repair_strategy", plan.rationale)
+        self.assertIn("src/main.cj:1", plan.rationale)
+        self.assertIn("manual fix", plan.rationale.lower())
 
 
 if __name__ == "__main__":

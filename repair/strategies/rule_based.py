@@ -31,6 +31,7 @@ class RuleBasedStrategy(RepairStrategy):
         rationale = (
             "MVP planner is in diagnosis-only safe mode for generic failures and does not auto-edit files. "
             f"Detected family={error.family}, matched knowledge={hit_titles}. "
+            f"{_build_manual_fix_guidance(error)} "
             "To enable auto-repair flow, configure a repair-capable `repair_strategy` and keep `allow_apply_patch=true`."
         )
         return PatchPlan(
@@ -39,3 +40,16 @@ class RuleBasedStrategy(RepairStrategy):
             diff_summary="No patch generated in diagnosis-only MVP safe mode.",
             actions=[],
         )
+
+
+def _build_manual_fix_guidance(error: ErrorSchema) -> str:
+    location = "unknown location"
+    if error.file and error.line is not None:
+        location = f"{error.file}:{error.line}"
+    elif error.file:
+        location = error.file
+    steps = (
+        f"Manual fix guidance: inspect {location}, then verify bracket/token pairing around the reported syntax region, "
+        "apply the minimal text fix, and re-run build."
+    )
+    return steps
