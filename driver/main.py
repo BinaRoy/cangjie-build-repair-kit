@@ -15,6 +15,7 @@ from adapters.hvigor_adapter import HvigorAdapter
 from driver.contracts import PolicyConfig, ProjectConfig
 from driver.doc_maintenance import append_update_entry
 from driver.env_setup import build_env_with_toolchain
+from driver.issue_autopilot import run_issue_autopilot
 from driver.loop import run_loop
 from driver.packaging import export_product_bundle
 from driver.reporting import generate_run_report
@@ -561,6 +562,14 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     bootstrap.add_argument("--project-name", default="sample")
     bootstrap.add_argument("--force", action="store_true")
 
+    autopilot = sub.add_parser("issue-autopilot", help="auto-run issue -> coding -> test -> PR flow")
+    autopilot.add_argument("--issue-number", required=True, type=int)
+    autopilot.add_argument("--base-branch", default="main")
+    autopilot.add_argument("--test-command", default="python3 -m unittest discover -s tests -q")
+    autopilot.add_argument("--skip-codex", action="store_true")
+    autopilot.add_argument("--no-pr", action="store_true")
+    autopilot.add_argument("--no-push", action="store_true")
+
     # Legacy mode compatibility: supports old direct run flags.
     parser.add_argument("--project-config")
     parser.add_argument("--policy-config")
@@ -596,6 +605,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _weekly_report_command(args.runs_dir, args.output, args.days)
     if args.command == "bootstrap-nonui":
         return _bootstrap_non_ui(args.project_root, args.output_dir, args.project_name, args.force)
+    if args.command == "issue-autopilot":
+        return run_issue_autopilot(
+            issue_number=args.issue_number,
+            base_branch=args.base_branch,
+            test_command=args.test_command,
+            run_codex=not args.skip_codex,
+            create_pr=not args.no_pr,
+            push_branch=not args.no_push,
+        )
     if args.command == "run":
         return _run_command(args.project_config, args.policy_config, args.run_id)
 
@@ -603,7 +621,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.project_config and args.policy_config:
         return _run_command(args.project_config, args.policy_config, args.run_id)
     raise SystemExit(
-        "Use `run`, `validate`, `init`, `export`, `snapshot`, `doc-update`, `weekly-report` or `bootstrap-nonui` subcommand. "
+        "Use `run`, `validate`, `init`, `export`, `snapshot`, `doc-update`, `weekly-report`, `bootstrap-nonui` or `issue-autopilot` subcommand. "
         "Example: cangjie-repair run --project-config ..."
     )
 

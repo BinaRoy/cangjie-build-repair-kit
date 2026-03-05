@@ -1,5 +1,12 @@
 # Cangjie Build-Repair Kit: Project Overview and Progress
 
+## Contributor workflow
+
+- PR-based development guide: `CONTRIBUTING.md`
+- Agent workflow source-of-truth: `docs/agent_issue_pr_workflow.md`
+- Release/build notes: `docs/git_and_release_workflow.md`
+- Issue autopilot entry: `scripts/issue_autopilot.sh`
+
 ## 1. What problem this project solves
 
 In Cangjie projects, using an LLM or an agent to write code is usually not the hard part. The real time cost is debugging and verification after code changes.

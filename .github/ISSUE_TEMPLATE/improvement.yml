@@ -1,0 +1,65 @@
+name: Improvement request
+description: Request an enhancement or workflow optimization.
+title: "[Improvement] "
+labels:
+  - enhancement
+body:
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Priority for implementation queue.
+      options:
+        - P0 (highest)
+        - P1
+        - P2
+    validations:
+      required: true
+  - type: input
+    id: queue_order
+    attributes:
+      label: Queue Order
+      description: Confirmed order number in current feature queue.
+      placeholder: "1"
+    validations:
+      required: true
+  - type: input
+    id: dependency
+    attributes:
+      label: Dependency / Blocker
+      description: Issue number or "none".
+      placeholder: "#120 or none"
+    validations:
+      required: true
+  - type: input
+    id: goal
+    attributes:
+      label: Goal
+      description: What outcome do you want?
+      placeholder: Reduce manual steps for Issue -> PR workflow
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Current Problem
+      description: What is hard or inefficient today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Change
+      description: Suggested implementation direction.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: How to verify this issue is done.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
