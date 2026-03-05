@@ -40,6 +40,8 @@ class RuleBasedStrategyTests(unittest.TestCase):
         self.assertFalse(plan.can_apply)
         self.assertIn("family=compile", plan.rationale)
         self.assertIn("k1", plan.rationale)
+        self.assertIn("diagnosis-only", plan.rationale.lower())
+        self.assertIn("repair_strategy", plan.rationale)
 
 
 if __name__ == "__main__":
