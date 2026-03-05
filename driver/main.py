@@ -142,14 +142,25 @@ def _looks_like_path_token(token: str) -> bool:
 
 def _extract_required_commands(command: str) -> list[str]:
     try:
-        tokens = shlex.split(command, posix=False)
+        tokens = shlex.split(command, posix=True)
     except ValueError:
         return []
     if not tokens:
         return []
 
-    required = [tokens[0]]
     wrappers = {"cmd", "cmd.exe", "powershell", "powershell.exe", "pwsh", "pwsh.exe", "bash", "sh"}
+    shell_builtins = {
+        "cd",
+        "echo",
+        "export",
+        "set",
+        "unset",
+        "alias",
+        "source",
+        ".",
+    }
+    separators = {"&&", "||", ";", "|"}
+    required: list[str] = [tokens[0]]
     head = tokens[0].lower()
     if head in wrappers and len(tokens) > 1:
         marker_index = None
@@ -158,9 +169,14 @@ def _extract_required_commands(command: str) -> list[str]:
                 if token.lower() in ("/c", "/k"):
                     marker_index = i
                     break
-        else:
+        elif head in {"powershell", "powershell.exe", "pwsh", "pwsh.exe"}:
             for i, token in enumerate(tokens[1:], start=1):
                 if token in ("-c", "-Command", "-command", "-File", "-file"):
+                    marker_index = i
+                    break
+        else:
+            for i, token in enumerate(tokens[1:], start=1):
+                if token == "-c" or (token.startswith("-") and "c" in token[1:]):
                     marker_index = i
                     break
         if marker_index is not None and marker_index + 1 < len(tokens):
@@ -172,7 +188,21 @@ def _extract_required_commands(command: str) -> list[str]:
                 required.append(nested)
         elif len(tokens) > 1:
             required.append(tokens[1])
-    return required
+        return list(dict.fromkeys(required))
+
+    required = []
+    at_command_head = True
+    for token in tokens:
+        if token in separators:
+            at_command_head = True
+            continue
+        if not at_command_head:
+            continue
+        at_command_head = False
+        if token.lower() in shell_builtins:
+            continue
+        required.append(token)
+    return list(dict.fromkeys(required))
 
 
 def _check_command_availability(command: str, workdir: Path) -> list[str]:
